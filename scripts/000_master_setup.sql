@@ -568,6 +568,8 @@ CREATE TRIGGER notify_profile_update AFTER UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION public.notify_profile_update();
 
 -- =====================================================
+ALTER TABLE notifications ADD COLUMN target_role VARCHAR(50) DEFAULT NULL;
+
 -- FINAL SETUP INSTRUCTIONS
 -- =====================================================
 

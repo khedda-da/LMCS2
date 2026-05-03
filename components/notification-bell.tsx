@@ -15,25 +15,25 @@ import { Bell, Check, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { fr, enUS } from 'date-fns/locale'
 
+
 interface Notification {
   id: string
   user_id: string | null
-  target_role?: string | null // Ajouté pour gérer les rôles
+  target_role?: string | null
   title: string
   message: string
   type: string
   read: boolean
   created_at: string
 }
-
 // 1. Ajout de `userRole` dans les props
 export function NotificationBell({ 
   userId, 
-  userRole = 'researcher', 
+  userRole = 'researcher', // <-- NOUVEAU
   language = 'en' 
 }: { 
   userId: string; 
-  userRole?: string; // 'admin', 'director', ou 'researcher'
+  userRole?: string;       // <-- NOUVEAU
   language?: 'en' | 'fr' 
 }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -73,7 +73,7 @@ export function NotificationBell({
     }
   }, [userId, userRole])
 
-  const loadNotifications = async () => {
+    const loadNotifications = async () => {
     try {
       let query = supabase
         .from('notifications')
@@ -81,19 +81,14 @@ export function NotificationBell({
         .order('created_at', { ascending: false })
         .limit(10)
 
-      // 3. Correction de la requête de chargement
+      // LOGIQUE MAGIQUE POUR L'ADMIN ET LE DIRECTEUR
       if (userRole === 'admin' || userRole === 'director') {
-        // Les admins/directeurs voient leurs propres notifications OU celles destinées à leur rôle
-        // (Ajustez 'target_role' selon le nom exact de votre colonne dans votre base de données Supabase)
-        query = query.or(`user_id.eq.${userId},target_role.eq.${userRole},target_role.eq.all,user_id.is.null`)
-        
-        // NOTE: Si vous voulez simplement que l'admin voie TOUTES les notifications du système, 
-        // vous pouvez simplement supprimer la ligne `query = query.or(...)` ci-dessus.
+        query = query.or(`user_id.eq.${userId},target_role.eq.${userRole},target_role.eq.all`)
       } else {
-        // Les chercheurs ne voient que leurs notifications strictes
         query = query.eq('user_id', userId)
       }
 
+      
       const { data, error } = await query
 
       if (error) {
