@@ -17,7 +17,8 @@ import { fr, enUS } from 'date-fns/locale'
 
 interface Notification {
   id: string
-  user_id: string
+  user_id: string | null
+  target_role?: string | null // Ajouté pour gérer les rôles
   title: string
   message: string
   type: string
@@ -25,7 +26,16 @@ interface Notification {
   created_at: string
 }
 
-export function NotificationBell({ userId, language = 'en' }: { userId: string; language?: 'en' | 'fr' }) {
+// 1. Ajout de `userRole` dans les props
+export function NotificationBell({ 
+  userId, 
+  userRole = 'researcher', 
+  language = 'en' 
+}: { 
+  userId: string; 
+  userRole?: string; // 'admin', 'director', ou 'researcher'
+  language?: 'en' | 'fr' 
+}) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -34,15 +44,26 @@ export function NotificationBell({ userId, language = 'en' }: { userId: string; 
   useEffect(() => {
     loadNotifications()
     
-    // Set up real-time subscription
+    // 2. Correction du canal Temps Réel (Real-time)
+    // Les filtres complexes (OR) ne sont pas gérés dans les chaînes de filtres Supabase realtime.
+    // Donc, pour les admins/directeurs, on écoute toute la table, pour les chercheurs on filtre.
+    const filterConfig = (userRole === 'admin' || userRole === 'director') 
+      ? {} // Pas de filtre strict, ils écoutent tout
+      : { filter: `user_id=eq.${userId}` } // Les chercheurs n'écoutent que leurs notifs
+
     const subscription = supabase
       .channel(`notifications:${userId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications', 
+          ...filterConfig 
+        },
         (payload) => {
           console.log('[v0] Notification update received:', payload)
-          loadNotifications()
+          loadNotifications() // Recharge pour appliquer les bons filtres de lecture
         }
       )
       .subscribe()
@@ -50,16 +71,30 @@ export function NotificationBell({ userId, language = 'en' }: { userId: string; 
     return () => {
       subscription.unsubscribe()
     }
-  }, [userId])
+  }, [userId, userRole])
 
   const loadNotifications = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(10)
+
+      // 3. Correction de la requête de chargement
+      if (userRole === 'admin' || userRole === 'director') {
+        // Les admins/directeurs voient leurs propres notifications OU celles destinées à leur rôle
+        // (Ajustez 'target_role' selon le nom exact de votre colonne dans votre base de données Supabase)
+        query = query.or(`user_id.eq.${userId},target_role.eq.${userRole},target_role.eq.all,user_id.is.null`)
+        
+        // NOTE: Si vous voulez simplement que l'admin voie TOUTES les notifications du système, 
+        // vous pouvez simplement supprimer la ligne `query = query.or(...)` ci-dessus.
+      } else {
+        // Les chercheurs ne voient que leurs notifications strictes
+        query = query.eq('user_id', userId)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error('[v0] Error loading notifications:', error)
@@ -67,7 +102,7 @@ export function NotificationBell({ userId, language = 'en' }: { userId: string; 
       }
 
       setNotifications(data || [])
-      const unread = (data || []).filter(n => !n.read).length
+      const unread = (data ||[]).filter(n => !n.read).length
       setUnreadCount(unread)
     } catch (err) {
       console.error('[v0] Error in loadNotifications:', err)
