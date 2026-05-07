@@ -31,12 +31,6 @@ export default function DashboardNav({
     setLanguage(language === 'en' ? 'fr' : 'en')
   }
 
-  const navItems = [
-    { label: language === 'fr' ? 'Tableau de bord' : 'Dashboard', href: '/dashboard' },
-    { label: language === 'fr' ? 'Encadrements' : 'Supervisions', href: '/dashboard/supervisions' },
-    { label: language === 'fr' ? 'Etudiants' : 'Students', href: '/dashboard/students' },
-    { label: language === 'fr' ? 'Recherche' : 'Search', href: '/dashboard/search' },
-  ]
 
   const adminItems = [
     { label: language === 'fr' ? 'Panneau Admin' : 'Admin Panel', href: '/dashboard/admin' },
