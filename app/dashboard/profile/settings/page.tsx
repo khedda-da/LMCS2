@@ -96,9 +96,10 @@ const handleSave = async () => {
   try {
     setSaving(true)
 
-    const updateData: any = {
-      first_name: formData.first_name?.trim(),
-      last_name: formData.last_name?.trim(),
+    const updateData: UserProfile = {
+      ...profile,
+      first_name: formData.first_name?.trim() || profile.first_name,
+      last_name: formData.last_name?.trim() || profile.last_name,
       full_name: `${formData.first_name?.trim()} ${formData.last_name?.trim()}`,
       phone: formData.phone?.trim() || null,
       address: formData.address?.trim() || null,
@@ -119,7 +120,8 @@ const handleSave = async () => {
       throw error
     }
 
-    setProfile(prev => prev ? { ...prev, ...updateData } : null)
+    // Update both profile and formData with the complete updated data
+    setProfile(updateData)
     setFormData(updateData)
     toast.success('Profile updated successfully!')
   } catch (error) {
@@ -263,7 +265,7 @@ const handlePasswordChange = async (e: React.FormEvent) => {
                   <FieldLabel htmlFor="email">Email (Read-only)</FieldLabel>
                   <Input
                     id="email"
-                    value={profile?.email || ''}
+                    value={formData.email || ''}
                     readOnly
                     className="bg-slate-50 dark:bg-slate-900 cursor-not-allowed"
                   />
