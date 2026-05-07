@@ -79,20 +79,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the password change in audit logs
-    await supabase
-      .from('audit_logs')
-      .insert({
-        user_id: user.id,
-        action: 'UPDATE',
-        entity_type: 'user',
-        entity_id: user.id,
-        changes: {
-          field: 'password',
-          old_value: '***',
-          new_value: '***'
-        },
-      })
-      .catch(err => console.error('[v0] Error logging password change:', err))
+    try {
+      const { error: auditError } = await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: user.id,
+          action: 'UPDATE',
+          entity_type: 'user',
+          entity_id: user.id,
+          changes: {
+            field: 'password',
+            old_value: '***',
+            new_value: '***'
+          },
+        })
+      if (auditError) console.error('[v0] Error logging password change:', auditError)
+    } catch (err) {
+      console.error('[v0] Exception logging password change:', err)
+    }
 
     return NextResponse.json({
       success: true,
