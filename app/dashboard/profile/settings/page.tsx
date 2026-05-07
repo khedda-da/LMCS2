@@ -123,6 +123,37 @@ const handleSave = async () => {
     // Update both profile and formData with the complete updated data
     setProfile(updateData)
     setFormData(updateData)
+
+    // Try to update Supabase auth user metadata so auth.user reflects name
+    try {
+      const { data: authData, error: authUpdateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: updateData.full_name,
+          first_name: updateData.first_name,
+          last_name: updateData.last_name,
+        },
+      })
+
+      if (authUpdateError) {
+        console.error('Auth update error:', authUpdateError)
+        toast.error('Profile saved, but failed to update auth metadata')
+      }
+    } catch (err) {
+      console.error('Auth update exception:', err)
+    }
+
+    // Notify other parts of the app (e.g., layout) that profile changed
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('profile-updated', { detail: updateData }))
+    }
+
+    // Refresh the app so server components and other pages pick up changes
+    try {
+      router.refresh()
+    } catch (err) {
+      if (typeof window !== 'undefined') window.location.reload()
+    }
+
     toast.success('Profile updated successfully!')
   } catch (error) {
     console.error('[v0] Error saving profile:', error)
