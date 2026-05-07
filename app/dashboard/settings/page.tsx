@@ -77,6 +77,7 @@ export default function SettingsPage() {
     setMessage('')
 
     try {
+      // Update auth user metadata
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: formData.full_name,
@@ -85,6 +86,31 @@ export default function SettingsPage() {
       })
 
       if (error) throw error
+
+      // Also update application users table so server-side and other components show the new name
+      try {
+        const { data: userRow, error: dbError } = await supabase
+          .from('users')
+          .update({ full_name: formData.full_name, phone: formData.phone })
+          .eq('id', user.id)
+        if (dbError) {
+          console.error('Failed to update users table:', dbError)
+        }
+      } catch (e) {
+        console.error('Users table update exception:', e)
+      }
+
+      // Notify other parts of the app and refresh
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-updated', { detail: { full_name: formData.full_name } }))
+      }
+
+      try {
+        router.refresh()
+      } catch (e) {
+        if (typeof window !== 'undefined') window.location.reload()
+      }
+
       setMessage(language === 'fr' ? 'Profil mis a jour avec succes!' : 'Profile updated successfully!')
       setTimeout(() => setMessage(''), 3000)
     } catch (error: any) {
