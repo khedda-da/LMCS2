@@ -84,102 +84,112 @@ export default function ProfileSettingsPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSave = async () => {
-    if (!profile) return
+const handleSave = async () => {
+  if (!profile) return
 
-    try {
-      setSaving(true)
-
-      const updateData: any = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        phone: formData.phone || null,
-        address: formData.address || null,
-        bio: formData.bio || null,
-        department: formData.department || null,
-        specialization: formData.specialization || null,
-      }
-
-      // Update full_name if first or last name changed
-      if (formData.first_name || formData.last_name) {
-        updateData.full_name = `${formData.first_name || ''} ${formData.last_name || ''}`.trim()
-      }
-
-      const { error } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', profile.id)
-
-      if (error) throw error
-
-      setProfile(prev => prev ? { ...prev, ...updateData } : null)
-      toast.success('Profile updated successfully')
-    } catch (error) {
-      console.error('[v0] Error saving profile:', error)
-      toast.error('Failed to save profile changes')
-    } finally {
-      setSaving(false)
-    }
+  // Add validation
+  if (!formData.first_name || !formData.last_name) {
+    toast.error('First name and last name are required')
+    return
   }
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validation
-    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      toast.error('Please fill in all password fields')
-      return
+  try {
+    setSaving(true)
+
+    const updateData: any = {
+      first_name: formData.first_name?.trim(),
+      last_name: formData.last_name?.trim(),
+      full_name: `${formData.first_name?.trim()} ${formData.last_name?.trim()}`,
+      phone: formData.phone?.trim() || null,
+      address: formData.address?.trim() || null,
+      bio: formData.bio?.trim() || null,
+      department: formData.department?.trim() || null,
+      specialization: formData.specialization?.trim() || null,
     }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match')
-      return
+    console.log('Updating profile with:', updateData) // Debug log
+
+    const { error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', profile.id)
+
+    if (error) {
+      console.error('Update error:', error)
+      throw error
     }
 
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters long')
-      return
-    }
+    setProfile(prev => prev ? { ...prev, ...updateData } : null)
+    setFormData(updateData)
+    toast.success('Profile updated successfully!')
+  } catch (error) {
+    console.error('[v0] Error saving profile:', error)
+    toast.error(error instanceof Error ? error.message : 'Failed to save profile changes')
+  } finally {
+    setSaving(false)
+  }
+}
 
-    if (passwordForm.oldPassword === passwordForm.newPassword) {
-      toast.error('New password must be different from old password')
-      return
-    }
+const handlePasswordChange = async (e: React.FormEvent) => {
+  e.preventDefault()
+  
+  // Validation
+  if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    toast.error('Please fill in all password fields')
+    return
+  }
 
-    try {
-      setUpdatingPassword(true)
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    toast.error('New passwords do not match')
+    return
+  }
 
-      // First verify the old password by attempting to sign in
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user?.email) {
-        throw new Error('Unable to verify identity')
-      }
+  if (passwordForm.newPassword.length < 8) {
+    toast.error('New password must be at least 8 characters long')
+    return
+  }
 
-      // Call an API endpoint to securely change the password
-      const response = await fetch('/api/profile/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
-        })
+  if (passwordForm.oldPassword === passwordForm.newPassword) {
+    toast.error('New password must be different from old password')
+    return
+  }
+
+  try {
+    setUpdatingPassword(true)
+
+    const response = await fetch('/api/profile/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
       })
+    })
 
-      const data = await response.json()
+    const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to change password')
-      }
-
-      toast.success('Password changed successfully')
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
-    } catch (error) {
-      console.error('[v0] Error changing password:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to change password')
-    } finally {
-      setUpdatingPassword(false)
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to change password')
     }
+
+    // Clear the form
+    setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
+    
+    // Show success with more detail
+    toast.success('Password changed successfully! Your new password is now active.')
+    
+    // Optional: Show a confirmation dialog
+    setTimeout(() => {
+      toast.info('Please use your new password on your next login.')
+    }, 500)
+    
+  } catch (error) {
+    console.error('[v0] Error changing password:', error)
+    toast.error(error instanceof Error ? error.message : 'Failed to change password')
+  } finally {
+    setUpdatingPassword(false)
   }
+}
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
