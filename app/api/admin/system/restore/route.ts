@@ -3,7 +3,18 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { logAuditEvent } from '@/lib/audit-logger'
 
-interface RestoreData {
+interface BackupData {
+  timestamp?: string
+  version?: string
+  data?: {
+    users?: any[]
+    students?: any[]
+    supervisions?: any[]
+    notifications?: any[]
+    audit_logs?: any[]
+    documents?: any[]
+  }
+  // Legacy format support
   users?: any[]
   supervisions?: any[]
   notifications?: any[]
@@ -54,10 +65,13 @@ export async function POST(request: NextRequest) {
     }
 
     const fileContent = await file.text()
-    const restoreData: RestoreData = JSON.parse(fileContent)
+    const backupFile: BackupData = JSON.parse(fileContent)
+
+    // Support both old and new backup formats
+    const restoreData = backupFile.data || backupFile
 
     // Validate data structure
-    if (!restoreData || (typeof restoreData !== 'object')) {
+    if (!restoreData || typeof restoreData !== 'object') {
       return NextResponse.json({ error: 'Invalid JSON format' }, { status: 400 })
     }
 
@@ -66,12 +80,11 @@ export async function POST(request: NextRequest) {
 
     // Clear existing data before restoring
     try {
-      // Delete all records first (cascade will handle related records)
       // Delete notifications first (no foreign key dependencies)
       const { error: notifError } = await serviceSupabase
         .from('notifications')
         .delete()
-        .gt('id', '') // This deletes all rows
+        .gt('id', '')
 
       if (notifError) {
         console.warn('[v0] Warning clearing notifications:', notifError)
@@ -85,6 +98,26 @@ export async function POST(request: NextRequest) {
 
       if (supervisionError) {
         console.warn('[v0] Warning clearing supervisions:', supervisionError)
+      }
+
+      // Delete students (depends on users)
+      const { error: studentError } = await serviceSupabase
+        .from('students')
+        .delete()
+        .gt('id', '')
+
+      if (studentError) {
+        console.warn('[v0] Warning clearing students:', studentError)
+      }
+
+      // Delete documents (depends on users/supervisions)
+      const { error: docError } = await serviceSupabase
+        .from('documents')
+        .delete()
+        .gt('id', '')
+
+      if (docError) {
+        console.warn('[v0] Warning clearing documents:', docError)
       }
 
       // Finally delete users (other tables depend on this)
@@ -106,7 +139,6 @@ export async function POST(request: NextRequest) {
     if (restoreData.users && Array.isArray(restoreData.users) && restoreData.users.length > 0) {
       try {
         for (const user of restoreData.users) {
-          // Validate required fields
           if (!user.id || !user.email) {
             errors.push(`Skipping user with missing required fields`)
             continue
@@ -144,7 +176,6 @@ export async function POST(request: NextRequest) {
     if (restoreData.supervisions && Array.isArray(restoreData.supervisions) && restoreData.supervisions.length > 0) {
       try {
         for (const supervision of restoreData.supervisions) {
-          // Validate required fields
           if (!supervision.id) {
             errors.push(`Skipping supervision with missing required fields`)
             continue
@@ -182,7 +213,6 @@ export async function POST(request: NextRequest) {
     if (restoreData.notifications && Array.isArray(restoreData.notifications) && restoreData.notifications.length > 0) {
       try {
         for (const notification of restoreData.notifications) {
-          // Validate required fields
           if (!notification.id || !notification.user_id) {
             errors.push(`Skipping notification with missing required fields`)
             continue
