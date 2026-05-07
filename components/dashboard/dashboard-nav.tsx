@@ -57,25 +57,14 @@ export default function DashboardNav({
 
           {/* Navigation Items */}
           <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
+            {/* Hide dashboard links for admin role */}
+            {userRole !== 'admin' && navItems && navItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <Button variant="ghost" size="sm">
                   {item.label}
                 </Button>
               </Link>
             ))}
-            {userRole === 'admin' && (
-              <>
-                <div className="w-px h-6 bg-border mx-2" />
-                {adminItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    <Button variant="ghost" size="sm">
-                      {item.label}
-                    </Button>
-                  </Link>
-                ))}
-              </>
-            )}
           </div>
 
           {/* User Profile & Actions */}
