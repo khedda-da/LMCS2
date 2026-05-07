@@ -200,9 +200,10 @@ const handlePasswordChange = async (e: React.FormEvent) => {
     })
 
     const data = await response.json()
+    console.log('[v0] change-password response:', response.status, data)
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to change password')
+    if (!response.ok && !(data && data.success)) {
+      throw new Error(data?.error || 'Failed to change password')
     }
 
     // Clear the form

@@ -93,20 +93,18 @@ export default function UsersPage() {
   }, [supabase, router])
 
   const tableRef = useRef<HTMLTableElement | null>(null)
-  const theadRef = useRef<HTMLTableSectionElement | null>(null)
   const summaryRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const updateWidths = () => {
-      if (!tableRef.current) return
-      const w = tableRef.current.scrollWidth
-      if (summaryRef.current) summaryRef.current.style.minWidth = `${w}px`
-      if (theadRef.current) theadRef.current.style.minWidth = `${w}px`
+    const updateSummaryWidth = () => {
+      if (tableRef.current && summaryRef.current) {
+        summaryRef.current.style.minWidth = `${tableRef.current.scrollWidth}px`
+      }
     }
 
-    updateWidths()
-    window.addEventListener('resize', updateWidths)
-    return () => window.removeEventListener('resize', updateWidths)
+    updateSummaryWidth()
+    window.addEventListener('resize', updateSummaryWidth)
+    return () => window.removeEventListener('resize', updateSummaryWidth)
   }, [users])
 
   if (loading) {
@@ -213,7 +211,7 @@ export default function UsersPage() {
             <Card>
               <CardContent className="p-0">
                 <table ref={tableRef} className="w-full">
-                  <thead ref={theadRef} className="border-b border-border bg-muted/50">
+                  <thead className="border-b border-border bg-muted/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.profile}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.name}</th>
