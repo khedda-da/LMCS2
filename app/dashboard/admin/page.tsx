@@ -355,9 +355,9 @@ export default function AdminDashboard() {
         </Card>
       ) : (
         <>
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
+          {/* Stats Cards - Compact width */}
+          <div className="flex flex-wrap gap-4">
+            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -369,7 +369,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
             </Card>
           </div>
 
-          {/* Tabs */}
+          {/* User Management Card - Full width */}
           <Tabs defaultValue="users" className="space-y-4">
             <TabsList>
               <TabsTrigger value="users" className="gap-2">
@@ -403,10 +403,9 @@ export default function AdminDashboard() {
               </TabsTrigger>
             </TabsList>
 
-            {/* User Management Tab */}
             <TabsContent value="users">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+              <Card className="w-full">
+                <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
                   <div>
                     <CardTitle>{t('userManagement')}</CardTitle>
                     <CardDescription>
@@ -519,8 +518,8 @@ export default function AdminDashboard() {
                     </Select>
                   </div>
 
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full">
+                  <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-4 py-3 text-left text-sm font-medium">{t('name')}</th>
@@ -590,7 +589,6 @@ export default function AdminDashboard() {
                                       >
                                         <Edit className="w-4 h-4" />
                                       </Button>
-
                                     </>
                                   )}
                                 </div>
@@ -604,8 +602,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-
-
           </Tabs>
 
           {/* Edit User Dialog */}
