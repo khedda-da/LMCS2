@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -91,6 +91,21 @@ export default function UsersPage() {
 
     loadData()
   }, [supabase, router])
+
+  const tableRef = useRef<HTMLTableElement | null>(null)
+  const summaryRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const updateSummaryWidth = () => {
+      if (tableRef.current && summaryRef.current) {
+        summaryRef.current.style.minWidth = `${tableRef.current.scrollWidth}px`
+      }
+    }
+
+    updateSummaryWidth()
+    window.addEventListener('resize', updateSummaryWidth)
+    return () => window.removeEventListener('resize', updateSummaryWidth)
+  }, [users])
 
   if (loading) {
     return (
@@ -195,7 +210,7 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <Card>
               <CardContent className="p-0">
-                <table className="w-full">
+                <table ref={tableRef} className="w-full">
                   <thead className="border-b border-border bg-muted/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.profile}</th>
@@ -267,6 +282,7 @@ export default function UsersPage() {
 
         {/* User Summary */}
         <Card className="mt-8">
+          <div ref={summaryRef}>
           <CardHeader>
             <CardTitle>{t.userSummary}</CardTitle>
             <CardDescription>{t.overviewByRole}</CardDescription>
@@ -291,6 +307,7 @@ export default function UsersPage() {
               </div>
             </div>
           </CardContent>
+        </div>
         </Card>
       </main>
     </div>
