@@ -30,22 +30,28 @@ export async function logAuditEvent(entry: AuditLogEntry) {
       }
     )
 
+    // Try to insert with all available columns
+    const insertData: any = {
+      user_id: entry.userId,
+      action: entry.action,
+      entity_type: entry.entityType,
+    }
+
+    // Add optional fields only if they exist
+    if (entry.userEmail) insertData.user_email = entry.userEmail
+    if (entry.entityId) insertData.entity_id = entry.entityId
+    if (entry.changes) insertData.changes = entry.changes
+    if (entry.details) insertData.details = entry.details
+    if (entry.ipAddress) insertData.ip_address = entry.ipAddress
+
     const { error } = await supabase
       .from('audit_logs')
-      .insert({
-        user_id: entry.userId,
-        user_email: entry.userEmail,
-        action: entry.action,
-        entity_type: entry.entityType,
-        entity_id: entry.entityId,
-        changes: entry.changes,
-        details: entry.details,
-        ip_address: entry.ipAddress,
-        created_at: new Date().toISOString(),
-      })
+      .insert(insertData)
 
     if (error) {
-      console.error('[v0] Audit log error:', error)
+      console.error('[v0] Audit log error:', error.message, error.code)
+    } else {
+      console.log('[v0] Audit log created for action:', entry.action)
     }
   } catch (error) {
     console.error('[v0] Failed to log audit event:', error)

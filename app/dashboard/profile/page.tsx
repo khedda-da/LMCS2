@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/components/providers'
-import { Upload, Mail, User, Loader2, Lock, ArrowLeft } from 'lucide-react'
+import { Upload, Mail, User, Loader2, Lock, ArrowLeft, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 

@@ -13,7 +13,6 @@ import {
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { StatisticsFilterPanel, StatisticsFilters } from '@/components/statistics-filter'
-import { NotificationBell } from '@/components/notification-bell'
 import { useLanguage } from '@/components/providers'
 
 export const dynamic = 'force-dynamic'
@@ -357,7 +356,6 @@ export default function DirectorDashboard() {
           <p className="text-muted-foreground mt-1">{t('laboratoryOverview')}</p>
         </div>
         <div className="flex items-center gap-3">
-          {userId && <NotificationBell userId={userId} language={language} />}
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-[180px] rounded-xl">
               <SelectValue placeholder={t('filterByYear')} />

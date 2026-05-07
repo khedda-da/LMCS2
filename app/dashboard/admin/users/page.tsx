@@ -8,14 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import DashboardNav from '@/components/dashboard/dashboard-nav'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/components/providers'
+import { toast } from 'sonner'
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -132,6 +134,8 @@ export default function UsersPage() {
       return
     }
 
+    setDeleting(userId)
+    
     try {
       const response = await fetch('/api/admin/delete-user', {
         method: 'POST',
@@ -141,15 +145,23 @@ export default function UsersPage() {
         body: JSON.stringify({ userId }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete user')
+        throw new Error(data.error || `Delete failed with status ${response.status}`)
       }
 
       // Remove from local state
       setUsers(users.filter(u => u.id !== userId))
+      setError(null)
+      toast.success('User deleted successfully')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete user')
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete user'
+      setError(errorMsg)
+      toast.error(errorMsg)
+      console.error('[v0] Delete user error:', err)
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -223,7 +235,7 @@ export default function UsersPage() {
                         </td>
                         <td className="px-6 py-3 text-sm flex gap-2">
                           <Link href={`/dashboard/profile?id=${u.id}`}>
-                            <Button variant="outline" size="sm" className="gap-2">
+                            <Button variant="outline" size="sm" className="gap-2" disabled={deleting === u.id}>
                               {t.view}
                               <ExternalLink className="w-3 h-3" />
                             </Button>
@@ -232,8 +244,16 @@ export default function UsersPage() {
                             onClick={() => handleDeleteUser(u.id)} 
                             variant="destructive" 
                             size="sm"
+                            disabled={deleting === u.id}
                           >
-                            {t.delete}
+                            {deleting === u.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                {t.delete}
+                              </>
+                            ) : (
+                              t.delete
+                            )}
                           </Button>
                         </td>
                       </tr>

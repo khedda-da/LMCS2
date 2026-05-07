@@ -10,11 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle2, XCircle, Users, AlertCircle, Search, Shield, Database, RefreshCw, Edit, UserPlus, Settings } from 'lucide-react'
+import { CheckCircle2, Users, AlertCircle, Search, Shield, Database, RefreshCw, Edit, UserPlus, Settings } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useLanguage } from '@/components/providers'
-import { NotificationBell } from '@/components/notification-bell'
 
 interface User {
   id: string
@@ -80,7 +79,6 @@ export default function AdminDashboard() {
       actions: { en: 'Actions', fr: 'Actions' },
       approve: { en: 'Approve', fr: 'Approuver' },
       reject: { en: 'Reject', fr: 'Rejeter' },
-      delete: { en: 'Delete', fr: 'Supprimer' },
       edit: { en: 'Edit', fr: 'Modifier' },
       approved: { en: 'Approved', fr: 'Approuve' },
       pending: { en: 'Pending', fr: 'En attente' },
@@ -207,10 +205,6 @@ export default function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm(language === 'fr' ? 'Etes-vous sur de vouloir supprimer ce compte?' : 'Are you sure you want to delete this account?')) {
-      return
-    }
-
     setProcessingId(userId)
     try {
       const response = await fetch('/api/admin/delete-user', {
@@ -333,7 +327,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="flex items-center gap-2">
-        {userId && <NotificationBell userId={userId} language={language} />}
         <Button onClick={fetchData} variant="outline" className="gap-2">
           <RefreshCw className="w-4 h-4" />
           {t('refreshData')}
@@ -597,14 +590,7 @@ export default function AdminDashboard() {
                                       >
                                         <Edit className="w-4 h-4" />
                                       </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => handleDeleteUser(user.id)}
-                                        disabled={processingId === user.id}
-                                      >
-                                        <XCircle className="w-4 h-4" />
-                                      </Button>
+
                                     </>
                                   )}
                                 </div>

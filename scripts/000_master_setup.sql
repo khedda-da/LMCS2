@@ -162,10 +162,12 @@ CREATE TABLE public.notifications (
 CREATE TABLE public.audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    user_email TEXT,
     action TEXT NOT NULL,
     entity_type TEXT,
     entity_id UUID,
     changes JSONB,
+    details TEXT,
     ip_address TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

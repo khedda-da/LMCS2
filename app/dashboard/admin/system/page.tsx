@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Database, RefreshCw, Download, Trash2, AlertCircle, CheckCircle2, Clock, Users, FileText } from 'lucide-react'
+import { Database, RefreshCw, Download, Trash2, AlertCircle, CheckCircle2, Clock, Users, FileText, Upload } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useLanguage } from '@/components/providers'
+import { toast } from 'sonner'
 
 interface HealthStatus {
   status: string
@@ -33,7 +34,9 @@ export default function SystemManagementPage() {
   const [logs, setLogs] = useState<SystemLog[]>([])
   const [loading, setLoading] = useState(true)
   const [maintenance, setMaintenance] = useState(false)
+  const [restoring, setRestoring] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { language } = useLanguage()
 
   useEffect(() => {
@@ -60,10 +63,13 @@ export default function SystemManagementPage() {
       const response = await fetch('/api/admin/system/logs?limit=50')
       const data = await response.json()
       if (response.ok) {
-        setLogs(data.logs)
+        console.log('[v0] Logs fetched:', data.logs)
+        setLogs(data.logs || [])
+      } else {
+        console.error('[v0] Logs fetch error:', data)
       }
     } catch (err: any) {
-      console.error('Failed to fetch logs:', err)
+      console.error('[v0] Failed to fetch logs:', err)
     } finally {
       setLoading(false)
     }
@@ -111,13 +117,70 @@ export default function SystemManagementPage() {
         element.click()
         document.body.removeChild(element)
         setError(null)
+        toast.success('Backup created successfully')
       } else {
         setError(data.error)
+        toast.error(data.error)
       }
     } catch (err: any) {
       setError(err.message)
+      toast.error(err.message)
     } finally {
       setMaintenance(false)
+    }
+  }
+
+  const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.json')) {
+      toast.error('Please select a valid JSON file')
+      return
+    }
+
+    try {
+      setRestoring(true)
+      console.log('[v0] Starting database restore with file:', file.name)
+      
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/admin/system/restore', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+      console.log('[v0] Restore response:', data)
+
+      if (response.ok) {
+        toast.success(`Database restored: ${data.restoredCount} records recovered`)
+        setError(null)
+        
+        if (data.errors && data.errors.length > 0) {
+          toast.warning(`${data.errors.length} errors occurred during restore`)
+          console.error('[v0] Restore errors:', data.errors)
+        }
+        
+        // Force page reload to ensure all cached data is cleared and new data is fetched
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } else {
+        setError(data.error)
+        toast.error(data.error)
+        console.error('[v0] Restore failed:', data.error)
+      }
+    } catch (err: any) {
+      setError(err.message)
+      toast.error(err.message)
+      console.error('[v0] Restore error:', err)
+    } finally {
+      setRestoring(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -131,6 +194,8 @@ export default function SystemManagementPage() {
       lastCheck: 'Last Check',
       backup: 'Backup & Recovery',
       createBackup: 'Create Backup',
+      restoreBackup: 'Restore from Backup',
+      selectFile: 'Select JSON file',
       maintenance: 'Maintenance Tasks',
       cleanupSessions: 'Clean Expired Sessions',
       clearNotifications: 'Clear Old Notifications',
@@ -154,6 +219,8 @@ export default function SystemManagementPage() {
       lastCheck: 'Dernier Contrôle',
       backup: 'Sauvegarde et Récupération',
       createBackup: 'Créer une Sauvegarde',
+      restoreBackup: 'Restaurer à partir d\'une Sauvegarde',
+      selectFile: 'Sélectionner fichier JSON',
       maintenance: 'Tâches de Maintenance',
       cleanupSessions: 'Nettoyer les Sessions Expirées',
       clearNotifications: 'Effacer les Anciennes Notifications',
@@ -287,6 +354,33 @@ export default function SystemManagementPage() {
                   <Download className="w-4 h-4 mr-2" />
                   {maintenance ? 'Creating...' : t.createBackup}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Database Restore</CardTitle>
+                <CardDescription>Restore database from a previously created backup JSON file</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleRestore}
+                  className="hidden"
+                  disabled={restoring}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={restoring}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {restoring ? 'Restoring...' : t.restoreBackup}
+                </Button>
+                <p className="text-sm text-gray-500">{t.selectFile}</p>
               </CardContent>
             </Card>
 

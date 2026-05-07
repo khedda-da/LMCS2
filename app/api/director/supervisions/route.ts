@@ -43,18 +43,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ notified: 0 })
     }
 
+    // Get supervision statistics for directors
+    const { data: stats } = await supabase
+      .from('supervisions')
+      .select('status, count(*)', { count: 'exact' })
+      .group_by('status')
+
     // Create notifications for directors about supervisions
     const directorIds = directors.map(d => d.id)
-    await createNotificationsForUsers(
-      directorIds,
-      'Supervision Updates',
-      `There are ${supervisions.length} supervisions requiring attention. Latest update: ${supervisions[0]?.title}`,
-      'info'
-    )
+    
+    if (directorIds.length > 0 && supervisions.length > 0) {
+      // Get high priority items (pending or suspended)
+      const { data: criticalItems } = await supabase
+        .from('supervisions')
+        .select('id, title, status')
+        .in('status', ['pending', 'suspended', 'on_hold'])
+        .limit(5)
+
+      const criticalCount = criticalItems?.length || 0
+      
+      const message = criticalCount > 0 
+        ? `${criticalCount} supervision(s) need attention: ${criticalItems?.map(s => s.title).join(', ')}`
+        : `All supervisions are on track. ${supervisions.length} active supervision(s)`
+
+      const notificationType = criticalCount > 0 ? 'warning' : 'info'
+
+      await createNotificationsForUsers(
+        directorIds,
+        criticalCount > 0 ? 'Supervision Alert' : 'Supervision Status Update',
+        message,
+        notificationType,
+        '/dashboard/director'
+      )
+    }
 
     return NextResponse.json({
       notified: directorIds.length,
-      count: supervisions.length
+      count: supervisions.length,
+      criticalCount: supervisions.filter((s: any) => ['pending', 'suspended', 'on_hold'].includes(s.status)).length
     })
   } catch (error) {
     console.error('[v0] Director supervisions notification error:', error)
