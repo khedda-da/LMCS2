@@ -210,3 +210,52 @@ export async function deleteNotification(notificationId: string) {
     return false
   }
 }
+
+/**
+ * Delete all notifications for a user
+ */
+export async function deleteAllNotifications(userId: string) {
+  try {
+    const supabase = getServiceClient()
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('[v0] Error deleting all notifications:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('[v0] Failed to delete all notifications:', error)
+    return false
+  }
+}
+
+/**
+ * Delete all unread notifications for a user (mark all as read by deleting)
+ */
+export async function deleteAllUnreadNotifications(userId: string) {
+  try {
+    const supabase = getServiceClient()
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId)
+      .eq('read', false)
+
+    if (error) {
+      console.error('[v0] Error deleting unread notifications:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('[v0] Failed to delete unread notifications:', error)
+    return false
+  }
+}

@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
         academic_year,
         objectives,
         teacher_id,
+        co_advisor_id,
         student_id,
+        students,
         theme_id
       `)
       .order('created_at', { ascending: false })
@@ -55,9 +57,24 @@ export async function GET(request: NextRequest) {
     // Fetch related data separately if supervisions exist
     let enrichedSupervisions: any[] = []
     if (supervisions && supervisions.length > 0) {
-      // Get unique IDs
-      const teacherIds = [...new Set(supervisions.map(s => s.teacher_id).filter(Boolean))]
-      const studentIds = [...new Set(supervisions.map(s => s.student_id).filter(Boolean))]
+      // Get unique IDs - handle both students array and legacy student_id, plus coadvisors
+      const teacherIds = [...new Set(supervisions.flatMap(s => [s.teacher_id, s.co_advisor_id]).filter(Boolean))]
+      const studentIds = [
+        ...new Set(
+          supervisions
+            .flatMap(s => {
+              const ids: string[] = []
+              if (s.students && Array.isArray(s.students)) {
+                ids.push(...s.students)
+              }
+              if (s.student_id) {
+                ids.push(s.student_id)
+              }
+              return ids
+            })
+            .filter(Boolean)
+        )
+      ]
       const themeIds = [...new Set(supervisions.map(s => s.theme_id).filter(Boolean))]
 
       // Fetch teachers
@@ -67,7 +84,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch students
       const { data: students } = studentIds.length > 0
-        ? await supabase.from('students').select('id, registration_number, program, level, email').in('id', studentIds)
+        ? await supabase.from('students').select('id, full_name, registration_number, program, level, email').in('id', studentIds)
         : { data: [] }
 
       // Fetch themes
@@ -80,33 +97,50 @@ export async function GET(request: NextRequest) {
       const studentMap = new Map((students || []).map(s => [s.id, s]))
       const themeMap = new Map((themes || []).map(t => [t.id, t]))
 
-      // Enrich supervisions
-      enrichedSupervisions = supervisions.map(sup => ({
-        ...sup,
-        teacher: teacherMap.get(sup.teacher_id) || null,
-        student: studentMap.get(sup.student_id) || null,
-        theme: themeMap.get(sup.theme_id) || null,
-      }))
+      // Enrich supervisions - handle both students array and legacy student_id
+      enrichedSupervisions = supervisions.map(sup => {
+        let studentList: any[] = []
+        if (sup.students && Array.isArray(sup.students)) {
+          studentList = sup.students.map(id => studentMap.get(id)).filter(Boolean)
+        } else if (sup.student_id) {
+          const student = studentMap.get(sup.student_id)
+          if (student) studentList = [student]
+        }
+        return {
+          ...sup,
+          teacher: teacherMap.get(sup.teacher_id) || null,
+          coAdvisor: teacherMap.get(sup.co_advisor_id) || null,
+          student: studentMap.get(sup.student_id) || null, // Keep for backward compatibility
+          studentList: studentList,
+          theme: themeMap.get(sup.theme_id) || null,
+        }
+      })
     }
 
     if (format === 'csv') {
-      // Create CSV header
-      let csv = 'Title,Type,Status,Student ID,Program,Supervisor,Theme,Academic Year,Start Date,End Date,Description\n'
+      // Create CSV header with all columns including comanager
+      let csv = 'Title,Type,Status,Students,Program,Supervisor,Co-Manager,Theme,Academic Year,Start Date,End Date,Description\n'
 
       enrichedSupervisions?.forEach((sup: any) => {
         const title = (sup.title || '').replace(/"/g, '""')
         const type = sup.type || ''
         const status = sup.status || ''
-        const studentId = sup.student?.registration_number || ''
-        const program = sup.student?.program || ''
+        // Get ALL student names from studentList or fall back to single student
+        const studentNames = sup.studentList && sup.studentList.length > 0 
+          ? sup.studentList.map((s: any) => s.full_name || 'N/A').join('; ')
+          : (sup.student?.full_name || '')
+        const program = sup.studentList && sup.studentList.length > 0 
+          ? sup.studentList.map((s: any) => s.program || 'N/A').join('; ')
+          : (sup.student?.program || '')
         const supervisor = (sup.teacher?.full_name || '').replace(/"/g, '""')
+        const coManager = (sup.coAdvisor?.full_name || '').replace(/"/g, '""')
         const theme = (sup.theme?.name || '').replace(/"/g, '""')
         const academicYear = sup.academic_year || ''
         const startDate = sup.start_date || ''
         const endDate = sup.end_date || ''
         const description = (sup.description || '').replace(/"/g, '""').replace(/\n/g, ' ')
 
-        csv += `"${title}","${type}","${status}","${studentId}","${program}","${supervisor}","${theme}","${academicYear}","${startDate}","${endDate}","${description}"\n`
+        csv += `"${title}","${type}","${status}","${studentNames}","${program}","${supervisor}","${coManager}","${theme}","${academicYear}","${startDate}","${endDate}","${description}"\n`
       })
 
       return new NextResponse(csv, {

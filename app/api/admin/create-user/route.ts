@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { createNotification, createNotificationsForUsers } from '@/lib/real-notifications'
 
 // Use service role key for admin operations
 const supabaseAdmin = createClient(
@@ -91,6 +92,21 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Failed to create user profile: ' + dbError.message },
         { status: 500 }
+      )
+    }
+
+    // Notify all admins about new user creation (not directors)
+    const { data: notifyUsers } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+
+    if (notifyUsers && notifyUsers.length > 0) {
+      await createNotificationsForUsers(
+        notifyUsers.map(u => u.id),
+        'New User Created',
+        `New ${role} account created: ${full_name} (${email})`,
+        'info'
       )
     }
 

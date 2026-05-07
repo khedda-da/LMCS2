@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle2, XCircle, Users, AlertCircle, Search, Shield, Database, RefreshCw, Edit, UserPlus } from 'lucide-react'
+import { CheckCircle2, XCircle, Users, AlertCircle, Search, Shield, Database, RefreshCw, Edit, UserPlus, Settings } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useLanguage } from '@/components/providers'
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
   const [creatingUser, setCreatingUser] = useState(false)
   const [createUserSuccess, setCreateUserSuccess] = useState<string | null>(null)
   const router = useRouter()
+  const adminRouter = useRouter()
   const supabase = createClient()
   const { language } = useLanguage()
 
@@ -58,6 +60,10 @@ export default function AdminDashboard() {
     const translations: Record<string, Record<string, string>> = {
       systemAdministration: { en: 'System Administration', fr: 'Administration Systeme' },
       manageUsersAndSystem: { en: 'Manage user accounts, validate data, and maintain the system', fr: 'Gerez les comptes, validez les donnees et maintenez le systeme' },
+      adminOptions: { en: 'Admin Options', fr: 'Options Admin' },
+      manageUsers: { en: 'Manage Users', fr: 'Gerer Utilisateurs' },
+      systemMaintenance: { en: 'System Maintenance', fr: 'Maintenance Systeme' },
+      viewSystemHealth: { en: 'Monitor database health, create backups, and run maintenance tasks', fr: 'Surveiller la sante de la base de donnees, creer des sauvegardes et executer des taches de maintenance' },
       totalUsers: { en: 'Total Users', fr: 'Total Utilisateurs' },
       pendingApproval: { en: 'Pending', fr: 'En Attente' },
       approvedUsers: { en: 'Approved', fr: 'Approuves' },
@@ -320,20 +326,18 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('systemAdministration')}</h1>
-          <p className="text-muted-foreground">{t('manageUsersAndSystem')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {userId && <NotificationBell userId={userId} language={language} />}
-          <Button onClick={fetchData} variant="outline" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            {t('refreshData')}
-          </Button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">{t('systemAdministration')}</h1>
+        <p className="text-gray-600 mt-2">{t('manageUsersAndSystem')}</p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {userId && <NotificationBell userId={userId} language={language} />}
+        <Button onClick={fetchData} variant="outline" className="gap-2">
+          <RefreshCw className="w-4 h-4" />
+          {t('refreshData')}
+        </Button>
       </div>
 
       {error && (
@@ -403,10 +407,6 @@ export default function AdminDashboard() {
               <TabsTrigger value="users" className="gap-2">
                 <Users className="w-4 h-4" />
                 {t('userManagement')}
-              </TabsTrigger>
-              <TabsTrigger value="validation" className="gap-2">
-                <Shield className="w-4 h-4" />
-                {t('dataValidation')}
               </TabsTrigger>
             </TabsList>
 
@@ -619,32 +619,7 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
 
-            {/* Data Validation Tab */}
-            <TabsContent value="validation">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('recentSupervisions')}</CardTitle>
-                  <CardDescription>{t('validateData')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {supervisions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">{t('noSupervisions')}</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {supervisions.slice(0, 10).map((sup) => (
-                        <div key={sup.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                          <div>
-                            <p className="font-medium">{sup.title}</p>
-                            <p className="text-sm text-muted-foreground">{sup.type} - {sup.academic_year}</p>
-                          </div>
-                          <Badge>{sup.status}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+
           </Tabs>
 
           {/* Edit User Dialog */}

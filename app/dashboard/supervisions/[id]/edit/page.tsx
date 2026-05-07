@@ -19,6 +19,7 @@ export default function EditSupervisionPage() {
   const [saving, setSaving] = useState(false)
   const [students, setStudents] = useState<any[]>([])
   const [supervisors, setSupervisors] = useState<any[]>([])
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [formData, setFormData] = useState({
     title: '',
     type: '',
@@ -98,6 +99,10 @@ export default function EditSupervisionPage() {
 
       if (error) throw error
       
+      // Handle both new students array and legacy student_id
+      const studentsToSelect = data.students && Array.isArray(data.students) ? data.students : (data.student_id ? [data.student_id] : [])
+      setSelectedStudents(studentsToSelect)
+      
       setFormData({
         title: data.title || '',
         type: data.type || '',
@@ -155,8 +160,23 @@ export default function EditSupervisionPage() {
     setSaving(true)
 
     try {
+      if (selectedStudents.length === 0) {
+        toast.error(language === 'fr' ? 'Selectionnez au moins un etudiant' : 'Please select at least one student')
+        setSaving(false)
+        return
+      }
+
       const updateData = {
-        ...formData,
+        title: formData.title,
+        type: formData.type,
+        status: formData.status,
+        academic_year: formData.academic_year,
+        description: formData.description,
+        objectives: formData.objectives,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        teacher_id: formData.teacher_id,
+        students: selectedStudents,
         co_advisor_id: formData.co_advisor_id === 'none' ? null : formData.co_advisor_id || null,
       }
 
@@ -357,22 +377,39 @@ export default function EditSupervisionPage() {
 
             <FieldGroup>
               <Field>
-                <FieldLabel>{t.student} *</FieldLabel>
-                <Select
-                  value={formData.student_id}
-                  onValueChange={(value) => setFormData({ ...formData, student_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t.selectStudent} />
-                  </SelectTrigger>
-                  <SelectContent>
+                <FieldLabel>{language === 'fr' ? 'Etudiants' : 'Students'} *</FieldLabel>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-input rounded-lg p-3">
                     {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.full_name} {student.registration_number ? `(${student.registration_number})` : ''} - {student.email}
-                      </SelectItem>
+                      <label key={student.id} className="flex items-center gap-2 cursor-pointer p-2 hover:bg-muted rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.includes(student.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStudents([...selectedStudents, student.id])
+                            } else {
+                              setSelectedStudents(selectedStudents.filter(id => id !== student.id))
+                            }
+                          }}
+                          className="rounded border-input"
+                        />
+                        <span className="text-sm">
+                          {student.full_name}
+                          {student.registration_number && <span className="block text-xs text-muted-foreground">({student.registration_number})</span>}
+                        </span>
+                      </label>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                  {selectedStudents.length === 0 && (
+                    <p className="text-sm text-destructive">{t.selectStudent} *</p>
+                  )}
+                  {selectedStudents.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStudents.length} {language === 'fr' ? 'etudiant(s) selectionne(s)' : 'student(s) selected'}
+                    </p>
+                  )}
+                </div>
               </Field>
             </FieldGroup>
 

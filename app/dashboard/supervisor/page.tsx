@@ -14,6 +14,7 @@ import { useLanguage } from '@/components/providers'
 
 interface Student {
   id: string
+  full_name: string
   registration_number: string
   program: string
 }
@@ -29,7 +30,9 @@ interface Supervision {
   end_date: string | null
   created_at: string
   student_id: string | null
+  students: string[] | null
   student: Student | null
+  studentList?: Student[]
 }
 
 export default function SupervisorDashboard() {
@@ -125,13 +128,54 @@ export default function SupervisorDashboard() {
         // Fetch supervisions for this supervisor
         const { data: supervisionsData, error: supervisionsError } = await supabase
           .from('supervisions')
-          .select('*, student:students(id, registration_number, program)')
+          .select('id, title, description, type, status, academic_year, start_date, end_date, created_at, student_id, students, teacher_id')
           .eq('teacher_id', user.id)
           .order('created_at', { ascending: false })
 
         if (supervisionsError) throw supervisionsError
 
-        setSupervisions(supervisionsData || [])
+        // Fetch all students to enrich the data
+        const studentIds = new Set<string>()
+        supervisionsData?.forEach(sup => {
+          if (sup.students && Array.isArray(sup.students)) {
+            sup.students.forEach(id => studentIds.add(id))
+          }
+          if (sup.student_id) {
+            studentIds.add(sup.student_id)
+          }
+        })
+
+        let studentsMap = new Map<string, Student>()
+        if (studentIds.size > 0) {
+          const { data: studentsData } = await supabase
+            .from('students')
+            .select('id, full_name, registration_number, program')
+            .in('id', Array.from(studentIds))
+
+          if (studentsData) {
+            studentsData.forEach(student => {
+              studentsMap.set(student.id, student)
+            })
+          }
+        }
+
+        // Enrich supervisions with student data
+        const enrichedSupervisions = supervisionsData?.map(sup => {
+          let studentList: Student[] = []
+          if (sup.students && Array.isArray(sup.students)) {
+            studentList = sup.students.map(id => studentsMap.get(id)).filter(Boolean) as Student[]
+          } else if (sup.student_id) {
+            const student = studentsMap.get(sup.student_id)
+            if (student) studentList = [student]
+          }
+          return {
+            ...sup,
+            studentList,
+            student: studentList.length > 0 ? studentList[0] : null
+          }
+        }) || []
+
+        setSupervisions(enrichedSupervisions)
 
         // Calculate stats
         const active = supervisionsData?.filter(s => s.status === 'active').length || 0
@@ -154,7 +198,6 @@ export default function SupervisorDashboard() {
   const handleUpdateStatus = async (supervisionId: string, newStatus: string) => {
     try {
       setError(null)
-      console.log('[v0] Updating supervision status:', supervisionId, newStatus)
       
       const endDate = newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
       const { error } = await supabase
@@ -167,11 +210,8 @@ export default function SupervisorDashboard() {
         .eq('id', supervisionId)
 
       if (error) {
-        console.error('[v0] Supabase error:', error)
         throw error
       }
-
-      console.log('[v0] Status updated successfully')
 
       const updated = supervisions.map(s => 
         s.id === supervisionId 
@@ -343,10 +383,14 @@ export default function SupervisorDashboard() {
                             <Badge variant="outline">{typeLabels[supervision.type] || supervision.type}</Badge>
                           </td>
                           <td className="py-3 px-4">
-                            {supervision.student ? (
-                              <div>
-                                <p className="text-sm">{supervision.student.registration_number}</p>
-                                <p className="text-xs text-muted-foreground">{supervision.student.program}</p>
+                            {supervision.studentList && supervision.studentList.length > 0 ? (
+                              <div className="space-y-1">
+                                {supervision.studentList.map(student => (
+                                  <div key={student.id}>
+                                    <p className="text-sm font-medium">{student.full_name}</p>
+                                    <p className="text-xs text-muted-foreground">{student.registration_number}</p>
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-xs">{t.notAssigned}</span>

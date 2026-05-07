@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 
 export default function SupervisionDetailPage() {
   const [supervision, setSupervision] = useState<any>(null)
-  const [student, setStudent] = useState<any>(null)
+  const [students, setStudents] = useState<any[]>([])
   const [supervisor, setSupervisor] = useState<any>(null)
   const [coSupervisor, setCoSupervisor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -122,14 +122,21 @@ export default function SupervisionDetailPage() {
 
       setSupervision(supervisionData)
 
-      // Fetch student info
-      if (supervisionData.student_id) {
+      // Fetch students info - handle both students array and legacy student_id
+      if (supervisionData.students && Array.isArray(supervisionData.students) && supervisionData.students.length > 0) {
+        const { data: studentsData } = await supabase
+          .from('students')
+          .select('*')
+          .in('id', supervisionData.students)
+        setStudents(studentsData || [])
+      } else if (supervisionData.student_id) {
+        // Fallback for legacy single student_id
         const { data: studentData } = await supabase
           .from('students')
           .select('*')
           .eq('id', supervisionData.student_id)
           .single()
-        setStudent(studentData)
+        if (studentData) setStudents([studentData])
       }
 
       // Fetch supervisor info
@@ -407,34 +414,38 @@ export default function SupervisionDetailPage() {
         </Card>
       </div>
 
-      {/* Student Card */}
+      {/* Students Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="w-5 h-5" />
-            {t.student}
+            {students.length === 1 ? t.student : language === 'fr' ? 'Etudiants' : 'Students'}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {student ? (
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-lg">{student.full_name}</p>
-                <p className="text-sm text-muted-foreground">{student.email}</p>
-                {student.registration_number && (
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'fr' ? 'Matricule' : 'Registration'}: {student.registration_number}
-                  </p>
-                )}
-                {student.level && (
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'fr' ? 'Niveau' : 'Level'}: {student.level.toUpperCase()}
-                  </p>
-                )}
-              </div>
+          {students.length > 0 ? (
+            <div className="space-y-3">
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <GraduationCap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-lg">{student.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{student.email}</p>
+                    {student.registration_number && (
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'fr' ? 'Matricule' : 'Registration'}: {student.registration_number}
+                      </p>
+                    )}
+                    {student.level && (
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'fr' ? 'Niveau' : 'Level'}: {student.level.toUpperCase()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">{t.na}</p>

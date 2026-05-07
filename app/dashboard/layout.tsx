@@ -49,15 +49,13 @@ const roleNavItems: Record<UserRole, NavItem[]> = {
   ],
   supervisor: [
     { href: '/dashboard/supervisor', label: 'My Supervisions', labelFr: 'Mes Encadrements', icon: ClipboardList },
+    { href: '/dashboard/supervisor/statistics', label: 'Statistics', labelFr: 'Statistiques', icon: TrendingUp },
     { href: '/dashboard/profile', label: 'Profile', labelFr: 'Profil', icon: User },
   ],
   admin: [
     { href: '/dashboard/admin', label: 'Admin Panel', labelFr: 'Panneau Admin', icon: Shield },
     { href: '/dashboard/admin/users', label: 'User Management', labelFr: 'Gestion Utilisateurs', icon: Users },
-    { href: '/dashboard/supervisions', label: 'All Supervisions', labelFr: 'Tous les Encadrements', icon: ClipboardList },
-    { href: '/dashboard/supervisions/new', label: 'New Supervision', labelFr: 'Nouvel Encadrement', icon: PlusCircle },
-    { href: '/dashboard/students', label: 'All Students', labelFr: 'Tous les Etudiants', icon: Users },
-    { href: '/dashboard/students/new', label: 'Add Student', labelFr: 'Ajouter Etudiant', icon: PlusCircle },
+    { href: '/dashboard/admin/system', label: 'System Maintenance', labelFr: 'Maintenance Systeme', icon: Settings },
     { href: '/dashboard/settings', label: 'Settings', labelFr: 'Parametres', icon: Settings },
     { href: '/dashboard/profile', label: 'Profile', labelFr: 'Profil', icon: User },
   ],

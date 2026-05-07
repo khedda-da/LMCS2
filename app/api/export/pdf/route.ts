@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         objectives,
         teacher_id,
         student_id,
+        students,
         theme_id
       `)
       .order('created_at', { ascending: false })
@@ -52,9 +53,24 @@ export async function GET(request: NextRequest) {
     // Fetch related data separately if supervisions exist
     let enrichedSupervisions: any[] = []
     if (supervisions && supervisions.length > 0) {
-      // Get unique IDs
+      // Get unique IDs - handle both students array and legacy student_id
       const teacherIds = [...new Set(supervisions.map(s => s.teacher_id).filter(Boolean))]
-      const studentIds = [...new Set(supervisions.map(s => s.student_id).filter(Boolean))]
+      const studentIds = [
+        ...new Set(
+          supervisions
+            .flatMap(s => {
+              const ids: string[] = []
+              if (s.students && Array.isArray(s.students)) {
+                ids.push(...s.students)
+              }
+              if (s.student_id) {
+                ids.push(s.student_id)
+              }
+              return ids
+            })
+            .filter(Boolean)
+        )
+      ]
       const themeIds = [...new Set(supervisions.map(s => s.theme_id).filter(Boolean))]
 
       // Fetch teachers
@@ -64,7 +80,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch students
       const { data: students } = studentIds.length > 0
-        ? await supabase.from('students').select('id, registration_number, program, level, email').in('id', studentIds)
+        ? await supabase.from('students').select('id, full_name, registration_number, program, level, email').in('id', studentIds)
         : { data: [] }
 
       // Fetch themes
@@ -77,13 +93,23 @@ export async function GET(request: NextRequest) {
       const studentMap = new Map((students || []).map(s => [s.id, s]))
       const themeMap = new Map((themes || []).map(t => [t.id, t]))
 
-      // Enrich supervisions
-      enrichedSupervisions = supervisions.map(sup => ({
-        ...sup,
-        teacher: teacherMap.get(sup.teacher_id) || null,
-        student: studentMap.get(sup.student_id) || null,
-        theme: themeMap.get(sup.theme_id) || null,
-      }))
+      // Enrich supervisions - handle both students array and legacy student_id
+      enrichedSupervisions = supervisions.map(sup => {
+        let studentsArray: any[] = []
+        if (sup.students && Array.isArray(sup.students)) {
+          studentsArray = sup.students.map(id => studentMap.get(id)).filter(Boolean)
+        } else if (sup.student_id) {
+          const student = studentMap.get(sup.student_id)
+          if (student) studentsArray = [student]
+        }
+        return {
+          ...sup,
+          teacher: teacherMap.get(sup.teacher_id) || null,
+          studentList: studentsArray,
+          student: studentMap.get(sup.student_id) || null, // Keep for backward compatibility
+          theme: themeMap.get(sup.theme_id) || null,
+        }
+      })
     }
 
     // Generate HTML for PDF
@@ -144,14 +170,16 @@ export async function GET(request: NextRequest) {
     .logo-placeholder {
       width: 60px;
       height: 60px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 24px;
+    }
+    .logo-placeholder img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      object-fit: contain;
     }
     h1 {
       color: #1e40af;
@@ -306,8 +334,10 @@ export async function GET(request: NextRequest) {
 </head>
 <body>
   <div class="header">
-    <div class="logo-section">
-      <div class="logo-placeholder">L</div>
+      <div class="logo-section">
+        <div class="logo-placeholder">
+          <img src="/lmcs-logo.png" alt="LMCS Logo" />
+        </div>
       <div>
         <h1>LMCS Laboratory</h1>
         <p class="subtitle">Supervision Management Report</p>
@@ -368,12 +398,12 @@ export async function GET(request: NextRequest) {
           <div class="detail-value">${sup.teacher?.full_name || 'N/A'}</div>
         </div>
         <div class="detail-group">
-          <div class="detail-label">Student</div>
-          <div class="detail-value">${sup.student?.registration_number || 'N/A'}</div>
+          <div class="detail-label">Student(s)</div>
+          <div class="detail-value">${sup.studentList && sup.studentList.length > 0 ? sup.studentList.map(s => s.full_name || 'N/A').join(', ') : (sup.student?.full_name || 'N/A')}</div>
         </div>
         <div class="detail-group">
           <div class="detail-label">Program</div>
-          <div class="detail-value">${sup.student?.program || 'N/A'}</div>
+          <div class="detail-value">${sup.studentList && sup.studentList.length > 0 ? sup.studentList.map(s => s.program || 'N/A').join(', ') : (sup.student?.program || 'N/A')}</div>
         </div>
         <div class="detail-group">
           <div class="detail-label">Research Theme</div>

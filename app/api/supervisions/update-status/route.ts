@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { logAuditEvent } from '@/lib/audit-logger'
-import { createNotificationsForUsers } from '@/lib/real-notifications'
+import { createNotificationsForUsers, createNotification } from '@/lib/real-notifications'
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -91,17 +91,17 @@ export async function PATCH(request: NextRequest) {
     // Remove the current user from notification list (they made the change)
     const filteredNotifyUsers = notifyUsers.filter(id => id !== user.id)
 
-    if (filteredNotifyUsers.length > 0) {
-      const statusLabels: Record<string, string> = {
-        active: 'Active',
-        pending: 'Pending',
-        completed: 'Completed',
-        on_hold: 'On Hold',
-        cancelled: 'Cancelled',
-        defended: 'Defended',
-        abandoned: 'Abandoned',
-      }
+    const statusLabels: Record<string, string> = {
+      active: 'Active',
+      pending: 'Pending',
+      completed: 'Completed',
+      on_hold: 'On Hold',
+      cancelled: 'Cancelled',
+      defended: 'Defended',
+      abandoned: 'Abandoned',
+    }
 
+    if (filteredNotifyUsers.length > 0) {
       await createNotificationsForUsers(
         filteredNotifyUsers,
         'Supervision Status Updated',
@@ -111,6 +111,27 @@ export async function PATCH(request: NextRequest) {
         'supervision',
         supervisionId
       )
+    }
+
+    // Also notify all admins and directors
+    const { data: adminUsers } = await supabase
+      .from('users')
+      .select('id')
+      .in('role', ['admin', 'director'])
+
+    if (adminUsers && adminUsers.length > 0) {
+      const adminUserIds = adminUsers.map(u => u.id).filter(id => id !== user.id)
+      if (adminUserIds.length > 0) {
+        await createNotificationsForUsers(
+          adminUserIds,
+          'Supervision Status Update',
+          `Supervision "${originalSupervision.title}" status changed to ${statusLabels[status] || status}`,
+          'info',
+          `/dashboard/supervisions/${supervisionId}`,
+          'supervision',
+          supervisionId
+        )
+      }
     }
 
     return NextResponse.json({ 

@@ -8,6 +8,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Users, BarChart3, Lock, Moon, Sun, Globe, ArrowRight, GraduationCap, BookOpen, Award } from 'lucide-react'
 import { useTheme, useLanguage } from '@/components/providers'
 import { useTranslation } from '@/lib/i18n'
+import { AnimatedCounter } from '@/components/animated-counter'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,9 +45,9 @@ export default function HomePage() {
   }, [])
 
   const stats = [
-    { value: '500+', label: language === 'fr' ? 'Encadrements' : 'Supervisions' },
-    { value: '50+', label: language === 'fr' ? 'Chercheurs' : 'Researchers' },
-    { value: '15+', label: language === 'fr' ? 'Annees' : 'Years' },
+    { value: 1000, label: language === 'fr' ? 'Encadrements' : 'Supervisions Capacity' },
+    { value: 200, label: language === 'fr' ? 'Chercheurs' : 'Researchers Capacity' },
+    { value: 500, label: language === 'fr' ? 'Etudiants' : 'Students Capacity' },
   ]
 
   const features = [
@@ -225,7 +226,7 @@ export default function HomePage() {
             >
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground">{stat.value}</p>
+                  <AnimatedCounter value={stat.value} suffix="+" duration={2000} />
                   <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
                 </div>
               ))}

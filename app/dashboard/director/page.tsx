@@ -16,6 +16,8 @@ import { StatisticsFilterPanel, StatisticsFilters } from '@/components/statistic
 import { NotificationBell } from '@/components/notification-bell'
 import { useLanguage } from '@/components/providers'
 
+export const dynamic = 'force-dynamic'
+
 interface Supervision {
   id: string
   title: string
@@ -75,14 +77,9 @@ export default function DirectorDashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [language, setLanguage] = useState<'en' | 'fr'>('en')
   const supabase = createClient()
   const router = useRouter()
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem('lmcs-language') as 'en' | 'fr' | null
-    if (savedLang) setLanguage(savedLang)
-  }, [])
+  const { language } = useLanguage()
 
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {

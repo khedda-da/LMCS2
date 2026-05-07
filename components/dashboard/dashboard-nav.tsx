@@ -36,8 +36,6 @@ export default function DashboardNav({
     { label: language === 'fr' ? 'Encadrements' : 'Supervisions', href: '/dashboard/supervisions' },
     { label: language === 'fr' ? 'Etudiants' : 'Students', href: '/dashboard/students' },
     { label: language === 'fr' ? 'Recherche' : 'Search', href: '/dashboard/search' },
-    { label: language === 'fr' ? 'Analytiques' : 'Analytics', href: '/dashboard/analytics' },
-    { label: language === 'fr' ? 'Exporter' : 'Export', href: '/dashboard/export' },
   ]
 
   const adminItems = [

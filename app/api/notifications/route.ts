@@ -59,35 +59,36 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { notificationId, markAllRead } = body
+    const { notificationId, deleteAll, deleteNotification } = body
 
-    if (markAllRead) {
-      // Mark all notifications as read
+    if (deleteAll) {
+      // Delete all unread notifications
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
+        .delete()
         .eq('user_id', user.id)
         .eq('read', false)
 
       if (error) {
-        console.error('[v0] Error marking all notifications read:', error)
-        return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 })
+        console.error('[v0] Error deleting all notifications:', error)
+        return NextResponse.json({ error: 'Failed to delete notifications' }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, message: 'All notifications marked as read' })
+      return NextResponse.json({ success: true, message: 'All notifications deleted' })
     }
 
-    if (notificationId) {
-      // Mark single notification as read
+    if (deleteNotification || notificationId) {
+      // Delete single notification
+      const idToDelete = deleteNotification || notificationId
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
+        .delete()
+        .eq('id', idToDelete)
         .eq('user_id', user.id)
 
       if (error) {
-        console.error('[v0] Error marking notification read:', error)
-        return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 })
+        console.error('[v0] Error deleting notification:', error)
+        return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 })
       }
 
       return NextResponse.json({ success: true })
@@ -100,36 +101,4 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
-    const { searchParams } = new URL(request.url)
-    const notificationId = searchParams.get('id')
-
-    if (notificationId) {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-        .eq('user_id', user.id)
-
-      if (error) {
-        console.error('[v0] Error deleting notification:', error)
-        return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 })
-      }
-
-      return NextResponse.json({ success: true })
-    }
-
-    return NextResponse.json({ error: 'Notification ID required' }, { status: 400 })
-  } catch (error) {
-    console.error('[v0] Error in notifications DELETE:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

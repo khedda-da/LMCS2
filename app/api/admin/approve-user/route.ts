@@ -75,6 +75,34 @@ export async function POST(request: NextRequest) {
       link: '/dashboard',
     })
 
+    // Get the approved user's full name for notification
+    const { data: approvedUserData } = await supabase
+      .from('users')
+      .select('full_name, email')
+      .eq('id', userId)
+      .single()
+
+    // Notify all admins about the approval (not directors)
+    const { data: notifyUsers } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+
+    if (notifyUsers && notifyUsers.length > 0) {
+      const userFullName = approvedUserData?.full_name || approvedUserData?.email || 'Unknown User'
+      await Promise.all(
+        notifyUsers.map(user =>
+          createNotification({
+            userId: user.id,
+            title: 'User Account Approved',
+            message: `${userFullName} has been approved as ${role}.`,
+            type: 'info',
+            link: '/dashboard/admin/users',
+          })
+        )
+      )
+    }
+
     return NextResponse.json({ success: true, message: 'User approved successfully' })
   } catch (error) {
     console.error('[v0] API error:', error)

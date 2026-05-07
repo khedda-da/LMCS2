@@ -14,6 +14,7 @@ import { useLanguage } from '@/components/providers'
 export default function SupervisorSupervisionDetailPage() {
   const [supervision, setSupervision] = useState<any>(null)
   const [student, setStudent] = useState<any>(null)
+  const [studentList, setStudentList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
@@ -137,16 +138,23 @@ export default function SupervisorSupervisionDetailPage() {
 
         setSupervision(supervisionData)
 
-        // Load student if assigned
-        if (supervisionData.student_id) {
-          const { data: studentData, error: studentError } = await supabase
+        // Load students if assigned - handle both students array and legacy student_id
+        let studentIds: string[] = []
+        if (supervisionData.students && Array.isArray(supervisionData.students)) {
+          studentIds = supervisionData.students
+        } else if (supervisionData.student_id) {
+          studentIds = [supervisionData.student_id]
+        }
+
+        if (studentIds.length > 0) {
+          const { data: studentsData, error: studentError } = await supabase
             .from('students')
             .select('*')
-            .eq('id', supervisionData.student_id)
-            .single()
+            .in('id', studentIds)
 
-          if (!studentError && studentData) {
-            setStudent(studentData)
+          if (!studentError && studentsData && studentsData.length > 0) {
+            setStudentList(studentsData)
+            setStudent(studentsData[0]) // Set the first student for backward compatibility
           }
         }
 
@@ -352,31 +360,35 @@ export default function SupervisorSupervisionDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Student Info */}
-          {student ? (
+          {/* Student(s) Info */}
+          {studentList.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">{t.student}</CardTitle>
+                <CardTitle className="text-sm">{studentList.length === 1 ? t.student : language === 'fr' ? 'Etudiants' : 'Students'}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Numero' : 'Registration'}</p>
-                  <p className="font-semibold text-foreground">{student.registration_number}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Nom' : 'Name'}</p>
-                  <p className="font-semibold text-foreground flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    {student.full_name || t.na}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Programme' : 'Program'}</p>
-                  <p className="font-semibold text-foreground flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-muted-foreground" />
-                    {student.program || t.na}
-                  </p>
-                </div>
+              <CardContent className="space-y-4">
+                {studentList.map((s) => (
+                  <div key={s.id} className="space-y-2 pb-4 last:pb-0 border-b last:border-0">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Nom' : 'Name'}</p>
+                      <p className="font-semibold text-foreground flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        {s.full_name || t.na}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Numero' : 'Registration'}</p>
+                      <p className="font-semibold text-foreground">{s.registration_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{language === 'fr' ? 'Programme' : 'Program'}</p>
+                      <p className="font-semibold text-foreground flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-muted-foreground" />
+                        {s.program || t.na}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           ) : (

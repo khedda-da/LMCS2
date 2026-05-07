@@ -34,7 +34,6 @@ END $$;
 
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
 DROP TABLE IF EXISTS public.notifications CASCADE;
-DROP TABLE IF EXISTS public.secret_codes CASCADE;
 DROP TABLE IF EXISTS public.documents CASCADE;
 DROP TABLE IF EXISTS public.sessions CASCADE;
 DROP TABLE IF EXISTS public.supervisions CASCADE;
@@ -140,18 +139,6 @@ CREATE TABLE public.documents (
     feedback TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Secret codes table
-CREATE TABLE public.secret_codes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code TEXT NOT NULL UNIQUE,
-    created_by UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    used BOOLEAN DEFAULT FALSE,
-    used_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    used_at TIMESTAMPTZ,
-    expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days'),
-    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Notifications table (with comprehensive notification types and metadata)
@@ -292,7 +279,6 @@ ALTER TABLE public.themes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.supervisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.secret_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
@@ -364,11 +350,6 @@ CREATE POLICY "documents_select_approved" ON public.documents FOR SELECT USING (
 );
 CREATE POLICY "documents_manage_approved" ON public.documents FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
-);
-
--- Secret codes: Admins can manage
-CREATE POLICY "secret_codes_admin_manage" ON public.secret_codes FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin' AND is_approved = true)
 );
 
 -- Notifications: Users can read/update their own, insert for all
@@ -568,8 +549,6 @@ CREATE TRIGGER notify_profile_update AFTER UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION public.notify_profile_update();
 
 -- =====================================================
-ALTER TABLE notifications ADD COLUMN target_role VARCHAR(50) DEFAULT NULL;
-
 -- FINAL SETUP INSTRUCTIONS
 -- =====================================================
 
@@ -596,7 +575,7 @@ ALTER TABLE notifications ADD COLUMN target_role VARCHAR(50) DEFAULT NULL;
 --    - Update supervision status (auto-notifies supervisors)
 --
 -- WHAT'S INCLUDED:
--- - 9 tables (users, students, supervisions, themes, sessions, documents, secret_codes, notifications, audit_logs)
+-- - 8 tables (users, students, supervisions, themes, sessions, documents, notifications, audit_logs)
 -- - All supervision types (PFE, Master, Doctorate, Internship, SPE, Research)
 -- - All supervision statuses (Active, Pending, Completed, Suspended, On Hold, Abandoned, Defended)
 -- - Student and supervisor array support for flexible supervision assignments

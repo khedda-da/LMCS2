@@ -183,8 +183,15 @@ export default function SupervisionsPage() {
         if (filters.searchIn.description && s.description) {
           checks.push(s.description.toLowerCase().includes(term))
         }
-        if (filters.searchIn.studentName && s.student_id && users[s.student_id]) {
-          checks.push(users[s.student_id].full_name?.toLowerCase().includes(term))
+        if (filters.searchIn.studentName) {
+          // Search in both new students array and legacy student_id
+          if (s.students && Array.isArray(s.students)) {
+            const studentMatches = s.students.some(sid => users[sid]?.full_name?.toLowerCase().includes(term))
+            if (studentMatches) checks.push(true)
+          }
+          if (s.student_id && users[s.student_id]) {
+            checks.push(users[s.student_id].full_name?.toLowerCase().includes(term))
+          }
         }
         if (filters.searchIn.supervisorName && s.teacher_id && users[s.teacher_id]) {
           checks.push(users[s.teacher_id].full_name?.toLowerCase().includes(term))
@@ -289,18 +296,27 @@ export default function SupervisionsPage() {
   }
 
   // Prepare data for export
-  const exportData = filteredSupervisions.map(s => ({
-    [language === 'fr' ? 'Titre' : 'Title']: s.title,
-    [language === 'fr' ? 'Type' : 'Type']: getTypeLabel(s.type),
-    [language === 'fr' ? 'Statut' : 'Status']: getStatusLabel(s.status),
-
-    [language === 'fr' ? 'Annee Academique' : 'Academic Year']: s.academic_year || t('na'),
-    [language === 'fr' ? 'Encadrant' : 'Supervisor']: users[s.teacher_id]?.full_name || t('na'),
-    [language === 'fr' ? 'Etudiant' : 'Student']: users[s.student_id]?.full_name || t('na'),
-    [language === 'fr' ? 'Lieu' : 'Location']: s.location || t('na'),
-    [language === 'fr' ? 'Date Debut' : 'Start Date']: s.start_date ? new Date(s.start_date).toLocaleDateString() : t('na'),
-    [language === 'fr' ? 'Date Fin' : 'End Date']: s.end_date ? new Date(s.end_date).toLocaleDateString() : t('na'),
-  }))
+  const exportData = filteredSupervisions.map(s => {
+    // Get students names - support both new students array and legacy student_id
+    let studentNames = t('na')
+    if (s.students && Array.isArray(s.students) && s.students.length > 0) {
+      studentNames = s.students.map(sid => users[sid]?.full_name || 'Unknown').join(', ')
+    } else if (s.student_id) {
+      studentNames = users[s.student_id]?.full_name || t('na')
+    }
+    
+    return {
+      [language === 'fr' ? 'Titre' : 'Title']: s.title,
+      [language === 'fr' ? 'Type' : 'Type']: getTypeLabel(s.type),
+      [language === 'fr' ? 'Statut' : 'Status']: getStatusLabel(s.status),
+      [language === 'fr' ? 'Annee Academique' : 'Academic Year']: s.academic_year || t('na'),
+      [language === 'fr' ? 'Encadrant' : 'Supervisor']: users[s.teacher_id]?.full_name || t('na'),
+      [language === 'fr' ? 'Etudiant(s)' : 'Student(s)']: studentNames,
+      [language === 'fr' ? 'Lieu' : 'Location']: s.location || t('na'),
+      [language === 'fr' ? 'Date Debut' : 'Start Date']: s.start_date ? new Date(s.start_date).toLocaleDateString() : t('na'),
+      [language === 'fr' ? 'Date Fin' : 'End Date']: s.end_date ? new Date(s.end_date).toLocaleDateString() : t('na'),
+    }
+  })
 
   return (
     <div className="space-y-6 animate-fade-in">
