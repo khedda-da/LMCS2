@@ -37,6 +37,22 @@ export default function DashboardNav({
     { label: language === 'fr' ? 'Utilisateurs' : 'Users', href: '/dashboard/admin/users' },
   ]
 
+  const roleNavItems: Record<string, { href: string; label: string }[]> = {
+    director: [
+      { href: '/dashboard/director', label: language === 'fr' ? 'Statistiques' : 'Statistics' },
+      { href: '/dashboard/supervisions', label: language === 'fr' ? 'Encadrements' : 'Supervisions' },
+      { href: '/dashboard/students', label: language === 'fr' ? 'Etudiants' : 'Students' },
+      { href: '/dashboard/search', label: language === 'fr' ? 'Recherche' : 'Search' },
+    ],
+    supervisor: [
+      { href: '/dashboard/supervisor', label: language === 'fr' ? 'Mes Encadrements' : 'My Supervisions' },
+      { href: '/dashboard/search', label: language === 'fr' ? 'Recherche' : 'Search' },
+    ],
+    admin: [],
+  }
+
+  const navItems = roleNavItems[userRole || 'supervisor'] || []
+
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
