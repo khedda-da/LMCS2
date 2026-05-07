@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
             continue
           }
 
+          // Insert into application users table
           const { error } = await serviceSupabase
             .from('users')
             .insert({
@@ -162,8 +163,56 @@ export async function POST(request: NextRequest) {
           if (error) {
             errors.push(`User ${user.email}: ${error.message}`)
             console.warn(`[v0] Failed to restore user ${user.email}:`, error)
-          } else {
-            restoredCount++
+            continue
+          }
+
+          // Create auth account with a temporary password so the user can sign in.
+          // Uses the service role client's admin API.
+          try {
+            const tempPassword = `Tmp!${Math.random().toString(36).slice(2,10)}${Date.now().toString().slice(-4)}`
+            if (serviceSupabase.auth && serviceSupabase.auth.admin && typeof serviceSupabase.auth.admin.createUser === 'function') {
+              const { user: createdAuthUser, error: authErr } = await serviceSupabase.auth.admin.createUser({
+                id: user.id,
+                email: user.email,
+                password: tempPassword,
+                email_confirm: true,
+                user_metadata: {
+                  full_name: user.full_name || '',
+                  first_name: user.first_name || '',
+                  last_name: user.last_name || '',
+                },
+              } as any)
+
+              if (authErr) {
+                errors.push(`Auth create user ${user.email}: ${authErr.message}`)
+                console.warn(`[v0] Failed to create auth user ${user.email}:`, authErr)
+              } else {
+                restoredCount++
+                // Insert a notification containing the temporary password for admin to share (do NOT email plaintext in prod)
+                try {
+                  const nid = (globalThis.crypto && typeof (globalThis.crypto as any).randomUUID === 'function') ? (globalThis.crypto as any).randomUUID() : `notif-${Date.now()}-${Math.random().toString(36).slice(2,6)}`
+                  await serviceSupabase.from('notifications').insert({
+                    id: nid,
+                    user_id: user.id,
+                    title: 'Account Restored',
+                    message: `Your account was restored. Temporary password: ${tempPassword}`,
+                    type: 'info',
+                    read: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  })
+                } catch (nerr) {
+                  console.warn('[v0] Failed to create restore notification:', nerr)
+                }
+              }
+            } else {
+              // Fallback: try to create a user via SQL into auth.users (risky).
+              console.warn('[v0] Admin createUser API not available on serviceSupabase; skipping auth user creation for', user.email)
+              errors.push(`Auth API unavailable; auth user not created for ${user.email}`)
+            }
+          } catch (aerr) {
+            errors.push(`Error creating auth user for ${user.email}: ${aerr instanceof Error ? aerr.message : String(aerr)}`)
+            console.error('[v0] Error creating auth user:', aerr)
           }
         }
       } catch (err) {
