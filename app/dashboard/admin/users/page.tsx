@@ -281,8 +281,7 @@ export default function UsersPage() {
         )}
 
         {/* User Summary */}
-        <Card className="mt-8">
-          <div ref={summaryRef}>
+        <Card className="mt-8" ref={summaryRef}>
           <CardHeader>
             <CardTitle>{t.userSummary}</CardTitle>
             <CardDescription>{t.overviewByRole}</CardDescription>
@@ -307,7 +306,6 @@ export default function UsersPage() {
               </div>
             </div>
           </CardContent>
-        </div>
         </Card>
       </main>
     </div>
