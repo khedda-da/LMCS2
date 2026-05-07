@@ -100,8 +100,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[v0] Unexpected error in password change:', error)
+    try {
+      console.error('[v0] Error stack:', (error as Error)?.stack)
+    } catch {}
     return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again.' },
+      { error: (error as Error)?.message || String(error) },
       { status: 500 }
     )
   }
