@@ -41,8 +41,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify old password by attempting to refresh the session with the old password
-    // In Supabase, we can use signInWithPassword to verify the current password
     const userEmail = user.email
     if (!userEmail) {
       return NextResponse.json(
@@ -51,8 +49,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Attempt to verify the old password
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    // Create a separate client instance to verify the old password
+    // This avoids contaminating the current authenticated session
+    const verificationClient = await createClient()
+    const { error: signInError } = await verificationClient.auth.signInWithPassword({
       email: userEmail,
       password: oldPassword,
     })
@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update the password using Supabase Auth
+    // Sign out the verification session to keep the original session clean
+    await verificationClient.auth.signOut()
+
+    // Now update the password using the original authenticated session
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     })
