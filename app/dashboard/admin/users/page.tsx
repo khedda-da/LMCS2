@@ -266,7 +266,7 @@ export default function UsersPage() {
         )}
 
         {/* User Summary */}
-        <Card className="mt-8">
+        <Card className="mt-8 min-w-full">
           <CardHeader>
             <CardTitle>{t.userSummary}</CardTitle>
             <CardDescription>{t.overviewByRole}</CardDescription>
