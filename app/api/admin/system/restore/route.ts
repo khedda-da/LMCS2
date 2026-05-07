@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     let restoredCount = 0
+    const tempPasswords: Record<string, string> = {}
     const errors: string[] = []
 
     // Clear existing data before restoring
@@ -317,6 +318,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Successfully restored ${restoredCount} records from backup`,
       restoredCount,
+      tempPasswords: Object.keys(tempPasswords).length ? tempPasswords : undefined,
       errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
