@@ -199,11 +199,18 @@ const handlePasswordChange = async (e: React.FormEvent) => {
       })
     })
 
-    const data = await response.json()
-    console.log('[v0] change-password response:', response.status, data)
+    const text = await response.text()
+    let data: any = undefined
+    try {
+      data = text ? JSON.parse(text) : {}
+    } catch (err) {
+      data = { raw: text }
+    }
+    console.log('[v0] change-password response:', response.status, data, 'raw:', text)
 
     if (!response.ok && !(data && data.success)) {
-      throw new Error(data?.error || 'Failed to change password')
+      const errMsg = data?.error || data?.message || (data && data.raw) || 'Failed to change password'
+      throw new Error(errMsg)
     }
 
     // Clear the form
