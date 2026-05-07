@@ -94,18 +94,14 @@ export default function UsersPage() {
 
   const tableRef = useRef<HTMLTableElement | null>(null)
   const theadRef = useRef<HTMLTableSectionElement | null>(null)
-  const cardRef = useRef<HTMLDivElement | null>(null)
   const summaryRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const updateWidths = () => {
       if (!tableRef.current) return
       const w = tableRef.current.scrollWidth
-      // Make the first card (table card) match the table's natural width
-      if (cardRef.current) cardRef.current.style.minWidth = `${w}px`
-      // Keep the table header spanning the same width
+      if (summaryRef.current) summaryRef.current.style.minWidth = `${w}px`
       if (theadRef.current) theadRef.current.style.minWidth = `${w}px`
-      // Keep summary width fixed via CSS (no dynamic resize)
     }
 
     updateWidths()
@@ -214,7 +210,6 @@ export default function UsersPage() {
           </Card>
         ) : (
           <div className="overflow-x-auto">
-            <div ref={cardRef} className="inline-block">
             <Card>
               <CardContent className="p-0">
                 <table ref={tableRef} className="w-full">
@@ -288,34 +283,32 @@ export default function UsersPage() {
         )}
 
         {/* User Summary */}
-        <div ref={summaryRef} className="mt-8 w-60">
-          <Card>
+        <Card className="mt-8" ref={summaryRef}>
           <CardHeader>
             <CardTitle>{t.userSummary}</CardTitle>
             <CardDescription>{t.overviewByRole}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">{t.totalUsers}</p>
                 <p className="text-2xl font-bold text-primary">{users.length}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t.admins}</p>
-                <p className="text-lg font-medium">{users.filter(u => u.role === 'admin').length}</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t.directors}</p>
-                <p className="text-lg font-medium">{users.filter(u => u.role === 'director').length}</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === 'director').length}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t.supervisors}</p>
-                <p className="text-lg font-medium">{users.filter(u => u.role === 'supervisor').length}</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === 'supervisor').length}</p>
               </div>
             </div>
           </CardContent>
-          </Card>
-        </div>
+        </Card>
       </main>
     </div>
   )
