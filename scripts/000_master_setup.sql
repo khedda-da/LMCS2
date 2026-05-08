@@ -61,9 +61,12 @@ CREATE TABLE public.users (
     specialization TEXT,
     phone TEXT,
     bio TEXT,
+    address TEXT,
     profile_picture_url TEXT,
+    password_hash TEXT,
     approval_date TIMESTAMPTZ,
     approved_by UUID,
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -79,6 +82,7 @@ CREATE TABLE public.students (
     program TEXT,
     level TEXT,
     academic_year TEXT,
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -109,6 +113,7 @@ CREATE TABLE public.supervisions (
     objectives TEXT,
     students UUID[] DEFAULT '{}',
     supervisors UUID[] DEFAULT '{}',
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

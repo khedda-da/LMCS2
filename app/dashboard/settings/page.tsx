@@ -6,33 +6,16 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { LogOut, User, Bell, Lock, Moon, Sun, Globe, Loader2 } from 'lucide-react'
+import { LogOut, Bell, Lock, Moon, Sun, Globe } from 'lucide-react'
 import { useTheme, useLanguage } from '@/components/providers'
 import { useTranslation, type Language } from '@/lib/i18n'
-import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
-
-interface PasswordForm {
-  oldPassword: string
-  newPassword: string
-  confirmPassword: string
-}
+import Link from 'next/link'
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [formData, setFormData] = useState({
-    full_name: '',
-    phone: '',
-  })
-  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  })
-  const [updatingPassword, setUpdatingPassword] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
@@ -51,10 +34,6 @@ export default function SettingsPage() {
 
       if (user) {
         setUser(user)
-        setFormData({
-          full_name: user.user_metadata?.full_name || '',
-          phone: user.user_metadata?.phone || '',
-        })
       }
       
       setLoading(false)
@@ -63,123 +42,9 @@ export default function SettingsPage() {
     getUser()
   }, [supabase, router])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage('')
-
-    try {
-      // Update auth user metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: formData.full_name,
-          phone: formData.phone,
-        },
-      })
-
-      if (error) throw error
-
-      // Also update application users table so server-side and other components show the new name
-      try {
-        const { data: userRow, error: dbError } = await supabase
-          .from('users')
-          .update({ full_name: formData.full_name, phone: formData.phone })
-          .eq('id', user.id)
-        if (dbError) {
-          console.error('Failed to update users table:', dbError)
-        }
-      } catch (e) {
-        console.error('Users table update exception:', e)
-      }
-
-      // Notify other parts of the app and refresh
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('profile-updated', { detail: { full_name: formData.full_name } }))
-      }
-
-      try {
-        router.refresh()
-      } catch (e) {
-        if (typeof window !== 'undefined') window.location.reload()
-      }
-
-      setMessage(language === 'fr' ? 'Profil mis a jour avec succes!' : 'Profile updated successfully!')
-      setTimeout(() => setMessage(''), 3000)
-    } catch (error: any) {
-      setMessage(error.message || (language === 'fr' ? 'Echec de la mise a jour du profil' : 'Failed to update profile'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
-  }
-
-  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setPasswordForm(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setMessage(language === 'fr' ? 'Veuillez remplir tous les champs' : 'Please fill in all password fields')
-      return
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setMessage(language === 'fr' ? 'Les nouveaux mots de passe ne correspondent pas' : 'New passwords do not match')
-      return
-    }
-
-    if (passwordForm.newPassword.length < 8) {
-      setMessage(language === 'fr' ? 'Le mot de passe doit contenir au moins 8 caracteres' : 'Password must be at least 8 characters long')
-      return
-    }
-
-    if (passwordForm.oldPassword === passwordForm.newPassword) {
-      setMessage(language === 'fr' ? 'Le nouveau mot de passe doit etre different de l\'ancien' : 'New password must be different from old password')
-      return
-    }
-
-    try {
-      setUpdatingPassword(true)
-      setMessage('')
-
-      const response = await fetch('/api/profile/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || (language === 'fr' ? 'Echec du changement de mot de passe' : 'Failed to change password'))
-      }
-
-      setMessage(language === 'fr' ? 'Mot de passe change avec succes!' : 'Password changed successfully!')
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
-      setTimeout(() => setMessage(''), 3000)
-    } catch (error: any) {
-      setMessage(error.message || (language === 'fr' ? 'Echec du changement de mot de passe' : 'Failed to change password'))
-    } finally {
-      setUpdatingPassword(false)
-    }
   }
 
   if (loading) {
@@ -211,74 +76,12 @@ export default function SettingsPage() {
         <Card className="p-6 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
           <p className="text-blue-700 dark:text-blue-300 text-sm">
             {language === 'fr' 
-              ? 'Connectez-vous pour acceder aux parametres du profil.' 
-              : 'Sign in to your account to access profile settings and preferences.'}
+              ? 'Connectez-vous pour acceder aux parametres.' 
+              : 'Sign in to your account to access settings.'}
           </p>
         </Card>
       )}
 
-      {/* Profile Information */}
-      {user && (
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <User className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-semibold text-foreground">
-            {language === 'fr' ? 'Informations du Profil' : 'Profile Information'}
-          </h2>
-        </div>
-
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              {language === 'fr' ? 'Email' : 'Email'}
-            </label>
-            <Input
-              type="email"
-              value={user?.email || ''}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {language === 'fr' ? 'L\'email ne peut pas etre modifie' : 'Email cannot be changed'}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              {language === 'fr' ? 'Nom Complet' : 'Full Name'}
-            </label>
-            <Input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleInputChange}
-              placeholder={language === 'fr' ? 'Entrez votre nom complet' : 'Enter your full name'}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              {language === 'fr' ? 'Telephone' : 'Phone Number'}
-            </label>
-            <Input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder={language === 'fr' ? 'Entrez votre numero' : 'Enter your phone number'}
-            />
-          </div>
-
-          <Button type="submit" disabled={saving}>
-            {saving 
-              ? (language === 'fr' ? 'Enregistrement...' : 'Saving...') 
-              : (language === 'fr' ? 'Enregistrer' : 'Save Changes')}
-          </Button>
-        </form>
-      </Card>
-      )}
-
-      
       {/* Notifications */}
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -391,94 +194,28 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {/* Password Change */}
+      {/* Security */}
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-6">
           <Lock className="w-5 h-5 text-primary" />
           <h2 className="text-xl font-semibold text-foreground">
-            {language === 'fr' ? 'Changer le Mot de Passe' : 'Change Password'}
+            {language === 'fr' ? 'Securite' : 'Security'}
           </h2>
         </div>
 
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="oldPassword">
-                {language === 'fr' ? 'Mot de Passe Actuel' : 'Current Password'}
-              </FieldLabel>
-              <Input
-                id="oldPassword"
-                name="oldPassword"
-                type="password"
-                value={passwordForm.oldPassword}
-                onChange={handlePasswordInputChange}
-                placeholder={language === 'fr' ? 'Entrez votre mot de passe actuel' : 'Enter your current password'}
-                required
-              />
-            </Field>
-          </FieldGroup>
-
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="newPassword">
-                {language === 'fr' ? 'Nouveau Mot de Passe' : 'New Password'}
-              </FieldLabel>
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={handlePasswordInputChange}
-                placeholder={language === 'fr' ? 'Entrez votre nouveau mot de passe (min 8 caracteres)' : 'Enter your new password (min 8 characters)'}
-                required
-              />
-            </Field>
-          </FieldGroup>
-
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="confirmPassword">
-                {language === 'fr' ? 'Confirmer le Nouveau Mot de Passe' : 'Confirm New Password'}
-              </FieldLabel>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={handlePasswordInputChange}
-                placeholder={language === 'fr' ? 'Confirmez votre nouveau mot de passe' : 'Confirm your new password'}
-                required
-              />
-            </Field>
-          </FieldGroup>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={updatingPassword}
-            >
-              {updatingPassword ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'fr' ? 'Mise a jour...' : 'Updating...'}
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  {language === 'fr' ? 'Changer le Mot de Passe' : 'Change Password'}
-                </>
-              )}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {language === 'fr' 
+              ? 'Gerez votre mot de passe et les parametres de securite de votre compte.' 
+              : 'Manage your password and account security settings.'}
+          </p>
+          <Link href="/dashboard/profile/settings">
+            <Button variant="outline">
+              <Lock className="w-4 h-4 mr-2" />
+              {language === 'fr' ? 'Changer le Mot de Passe' : 'Change Password'}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })}
-              disabled={updatingPassword}
-            >
-              {language === 'fr' ? 'Effacer' : 'Clear'}
-            </Button>
-          </div>
-        </form>
+          </Link>
+        </div>
       </Card>
 
       {/* Danger Zone */}

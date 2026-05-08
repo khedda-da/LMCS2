@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch supervisions for the supervisor (as main supervisor OR co-supervisor)
+    // Filter out soft-deleted supervisions
     const { data: supervisions, error } = await supabase
       .from('supervisions')
       .select(`
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .or(`teacher_id.eq.${supervisorId},co_advisor_id.eq.${supervisorId}`)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -109,11 +111,12 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Verify the supervisor exists and is approved
+    // Verify the supervisor exists, is approved, and not soft-deleted
     const { data: supervisorData, error: supervisorError } = await supabase
       .from('users')
-      .select('id, role, is_approved')
+      .select('id, role, is_approved, full_name')
       .eq('id', supervisor_id)
+      .is('deleted_at', null)
       .single()
 
     if (supervisorError || !supervisorData?.is_approved) {
@@ -123,11 +126,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify the student exists
+    // Verify the student exists and is not soft-deleted
     const { data: studentData, error: studentError } = await supabase
       .from('students')
       .select('id')
       .eq('id', student_id)
+      .is('deleted_at', null)
       .single()
 
     if (studentError) {
@@ -195,11 +199,12 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Notify all admins and directors
+      // Notify all admins and directors (exclude soft-deleted)
       const { data: admins } = await supabase
         .from('users')
         .select('id')
         .in('role', ['admin', 'director'])
+        .is('deleted_at', null)
 
       if (admins && admins.length > 0) {
         const adminIds = admins.map(admin => admin.id)

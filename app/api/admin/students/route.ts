@@ -19,9 +19,11 @@ export async function GET() {
     )
 
     // First get all students from students table
+    // Filter out soft-deleted students (deleted_at is null)
     const { data: students, error: studentsError } = await supabase
       .from('students')
-      .select('id, user_id, registration_number, program, level, academic_year')
+      .select('id, user_id, registration_number, program, level, academic_year, deleted_at')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (studentsError) {
@@ -38,6 +40,7 @@ export async function GET() {
         .from('users')
         .select('id, full_name, email')
         .in('id', userIds)
+        .is('deleted_at', null)
 
       users?.forEach(u => {
         usersMap[u.id] = u

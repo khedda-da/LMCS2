@@ -129,16 +129,6 @@ export default function DashboardLayout({
     loadUser()
   }, [router])
 
-  useEffect(() => {
-    const onProfileUpdated = (e: any) => {
-      const data = e.detail
-      if (data?.full_name) setUserName(data.full_name)
-    }
-
-    window.addEventListener('profile-updated', onProfileUpdated)
-    return () => window.removeEventListener('profile-updated', onProfileUpdated)
-  }, [])
-
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()

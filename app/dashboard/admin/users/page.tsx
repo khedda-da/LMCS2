@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+
 import DashboardNav from '@/components/dashboard/dashboard-nav'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/components/providers'
@@ -26,7 +26,6 @@ export default function UsersPage() {
   const t = {
     userManagement: language === 'fr' ? 'Gestion des Utilisateurs' : 'User Management',
     manageUsers: language === 'fr' ? 'Gerez les utilisateurs du systeme et leurs roles' : 'Manage system users and their roles',
-    profile: language === 'fr' ? 'Profil' : 'Profile',
     name: language === 'fr' ? 'Nom' : 'Name',
     email: language === 'fr' ? 'Email' : 'Email',
     role: language === 'fr' ? 'Role' : 'Role',
@@ -79,10 +78,11 @@ export default function UsersPage() {
         }
       }
 
-      // Load users
+      // Load users (exclude deleted users)
       const { data: usersData } = await supabase
         .from('users')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       setUsers(usersData || [])
@@ -91,21 +91,6 @@ export default function UsersPage() {
 
     loadData()
   }, [supabase, router])
-
-  const tableRef = useRef<HTMLTableElement | null>(null)
-  const summaryRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const updateSummaryWidth = () => {
-      if (tableRef.current && summaryRef.current) {
-        summaryRef.current.style.minWidth = `${tableRef.current.scrollWidth}px`
-      }
-    }
-
-    updateSummaryWidth()
-    window.addEventListener('resize', updateSummaryWidth)
-    return () => window.removeEventListener('resize', updateSummaryWidth)
-  }, [users])
 
   if (loading) {
     return (
@@ -210,10 +195,9 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <Card>
               <CardContent className="p-0">
-                <table ref={tableRef} className="w-full">
+                <table className="w-full">
                   <thead className="border-b border-border bg-muted/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold">{t.profile}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.name}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.email}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">{t.role}</th>
@@ -226,16 +210,6 @@ export default function UsersPage() {
                   <tbody>
                     {users.map((u) => (
                       <tr key={u.id} className="border-b border-border hover:bg-muted/50 transition">
-                        <td className="px-6 py-3">
-                          <Link href={`/dashboard/profile?id=${u.id}`} className="inline-block hover:opacity-80 transition">
-                            <Avatar className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-full overflow-hidden">
-                              {u.profile_picture_url && <AvatarImage src={u.profile_picture_url} alt={u.full_name} className="rounded-full object-cover" />}
-                              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-full">
-                                {u.full_name?.[0]?.toUpperCase() || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                          </Link>
-                        </td>
                         <td className="px-6 py-3 text-sm font-medium">{u.full_name || t.na}</td>
                         <td className="px-6 py-3 text-sm">{u.email}</td>
                         <td className="px-6 py-3 text-sm">
@@ -281,7 +255,7 @@ export default function UsersPage() {
         )}
 
         {/* User Summary */}
-        <Card className="mt-8" ref={summaryRef}>
+        <Card className="mt-8">
           <CardHeader>
             <CardTitle>{t.userSummary}</CardTitle>
             <CardDescription>{t.overviewByRole}</CardDescription>

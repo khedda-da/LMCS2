@@ -16,7 +16,18 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
-    const { email, password, full_name, role } = await request.json()
+    const { 
+      email, 
+      password, 
+      full_name, 
+      first_name,
+      last_name,
+      phone,
+      department,
+      specialization,
+      address,
+      role 
+    } = await request.json()
 
     // Validate required fields
     if (!email || !password || !full_name || !role) {
@@ -77,8 +88,12 @@ export async function POST(request: Request) {
           id: authData.user.id,
           email,
           full_name,
-          first_name: full_name.split(' ')[0] || '',
-          last_name: full_name.split(' ').slice(1).join(' ') || '',
+          first_name: first_name || full_name.split(' ')[0] || '',
+          last_name: last_name || full_name.split(' ').slice(1).join(' ') || '',
+          phone: phone || null,
+          department: department || null,
+          specialization: specialization || null,
+          address: address || null,
           role,
           requested_role: role,
           is_approved: true, // Auto-approve accounts created by admin

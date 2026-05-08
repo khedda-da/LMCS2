@@ -340,12 +340,23 @@ export default function SystemManagementPage() {
 
         <TabsContent value="backup">
           <div className="space-y-4">
+            {/* Backup Info Alert */}
+            <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                <strong>Password Recovery Enabled:</strong> Backups now include password hashes. When you restore deleted users, they can immediately login with their previous passwords.
+              </AlertDescription>
+            </Alert>
+
             <Card>
               <CardHeader>
                 <CardTitle>Database Backup</CardTitle>
-                <CardDescription>Create a full database backup for recovery purposes</CardDescription>
+                <CardDescription>Create a full database backup including user passwords for recovery</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Backup includes all database tables and user password hashes. Users can be restored with full access recovery.
+                </p>
                 <Button
                   onClick={handleBackup}
                   disabled={maintenance}
@@ -363,6 +374,12 @@ export default function SystemManagementPage() {
                 <CardDescription>Restore database from a previously created backup JSON file</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-900/20">
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+                    Restoring will replace all database records. Deleted users will be restored and can login with their previous passwords.
+                  </AlertDescription>
+                </Alert>
                 <input
                   ref={fileInputRef}
                   type="file"

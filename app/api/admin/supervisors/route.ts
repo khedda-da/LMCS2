@@ -19,11 +19,13 @@ export async function GET() {
     )
 
     // Fetch users who are supervisors or have supervisor role
+    // Filter out soft-deleted users (deleted_at is null)
     const { data: supervisors, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, department, is_approved')
+      .select('id, full_name, email, role, department, is_approved, deleted_at')
       .or('role.eq.supervisor,role.eq.director,requested_role.eq.supervisor,requested_role.eq.director')
       .eq('is_approved', true)
+      .is('deleted_at', null)
       .order('full_name', { ascending: true })
 
     if (error) {

@@ -63,35 +63,31 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
       .single()
 
-    // Delete user from users table
-    const { error: deleteUserError } = await supabase
+    // Soft delete: mark user as deleted instead of removing
+    const { error: softDeleteError } = await supabase
       .from('users')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', userId)
 
-    if (deleteUserError) {
-      console.error('[v0] Delete user error:', deleteUserError)
+    if (softDeleteError) {
+      console.error('[v0] Soft delete user error:', softDeleteError)
       return NextResponse.json(
-        { error: deleteUserError.message },
+        { error: softDeleteError.message },
         { status: 500 }
       )
     }
 
-    console.log('[v0] User deleted from database:', userId)
+    console.log('[v0] User soft deleted (marked as deleted):', userId)
 
-    // Try to delete user from auth as well
-    try {
-      await supabase.auth.admin.deleteUser(userId)
-    } catch (authError) {
-      console.log('[v0] Auth deletion warning:', authError)
-      // Continue - user data is already deleted from database
-    }
+    // Note: Auth user is NOT deleted - user can be restored from backup with their credentials
+    // Soft delete in DB is sufficient for recovery - don't delete from Supabase Auth
 
-    // Notify all admins about user deletion (not directors)
+    // Notify all admins about user deletion (not directors, exclude soft-deleted)
     const { data: notifyUsers } = await supabase
       .from('users')
       .select('id')
       .eq('role', 'admin')
+      .is('deleted_at', null)
 
     if (notifyUsers && notifyUsers.length > 0 && userData) {
       await createNotificationsForUsers(

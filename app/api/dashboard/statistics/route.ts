@@ -17,38 +17,44 @@ export async function GET() {
       }
     )
 
-    // Get total users count
+    // Get total users count (exclude soft-deleted)
     const { count: totalUsers } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null)
 
-    // Get active supervisions count
+    // Get active supervisions count (exclude soft-deleted)
     const { count: activeSuperVisions } = await supabase
       .from('supervisions')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active')
+      .is('deleted_at', null)
 
-    // Get completed supervisions count
+    // Get completed supervisions count (exclude soft-deleted)
     const { count: completedSupervisions } = await supabase
       .from('supervisions')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed')
+      .is('deleted_at', null)
 
-    // Get students count
+    // Get students count (exclude soft-deleted)
     const { count: totalStudents } = await supabase
       .from('students')
       .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null)
 
-    // Get pending approvals count
+    // Get pending approvals count (exclude soft-deleted)
     const { count: pendingApprovals } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('is_approved', false)
+      .is('deleted_at', null)
 
-    // Get supervision types distribution
+    // Get supervision types distribution (exclude soft-deleted)
     const { data: supervisionTypes } = await supabase
       .from('supervisions')
-      .select('type, count:id', { count: 'exact' })
+      .select('type')
+      .is('deleted_at', null)
       .then(({ data, error }) => {
         if (error) return { data: [] }
         // Group by type
@@ -59,10 +65,11 @@ export async function GET() {
         return { data: Object.entries(grouped).map(([type, count]) => ({ type, count })) }
       })
 
-    // Get academic year distribution
+    // Get academic year distribution (exclude soft-deleted)
     const { data: academicYears } = await supabase
       .from('supervisions')
       .select('academic_year')
+      .is('deleted_at', null)
       .then(({ data, error }) => {
         if (error) return { data: [] }
         // Group by academic year
@@ -73,10 +80,11 @@ export async function GET() {
         return { data: Object.entries(grouped).map(([year, count]) => ({ year, count })) }
       })
 
-    // Get user roles distribution
+    // Get user roles distribution (exclude soft-deleted)
     const { data: userRoles } = await supabase
       .from('users')
       .select('role')
+      .is('deleted_at', null)
       .then(({ data, error }) => {
         if (error) return { data: [] }
         // Group by role

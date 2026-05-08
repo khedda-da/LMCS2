@@ -117,22 +117,24 @@ export default function EditSupervisionPage() {
         student_id: data.student_id || '',
       })
 
-      // Fetch supervisors
+      // Fetch supervisors (exclude soft-deleted users)
       const { data: supervisorsData } = await supabase
         .from('users')
         .select('id, full_name, email')
         .eq('role', 'supervisor')
         .eq('is_approved', true)
+        .is('deleted_at', null)
         .order('full_name', { ascending: true })
 
       if (supervisorsData) {
         setSupervisors(supervisorsData)
       }
 
-      // Fetch students
+      // Fetch students (exclude soft-deleted)
       const { data: studentsData } = await supabase
         .from('students')
         .select('id, full_name, email, registration_number, level')
+        .is('deleted_at', null)
         .order('full_name', { ascending: true })
 
       if (studentsData) {

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     // Build query based on role - simplified to avoid foreign key issues
+    // Filter out soft-deleted supervisions
     let query = supabase
       .from('supervisions')
       .select(`
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
         students,
         theme_id
       `)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     // Filter by teacher_id if not admin/director
@@ -77,14 +79,14 @@ export async function GET(request: NextRequest) {
       ]
       const themeIds = [...new Set(supervisions.map(s => s.theme_id).filter(Boolean))]
 
-      // Fetch teachers
+      // Fetch teachers (exclude soft-deleted)
       const { data: teachers } = teacherIds.length > 0 
-        ? await supabase.from('users').select('id, full_name, email').in('id', teacherIds)
+        ? await supabase.from('users').select('id, full_name, email').in('id', teacherIds).is('deleted_at', null)
         : { data: [] }
 
-      // Fetch students
+      // Fetch students (exclude soft-deleted)
       const { data: students } = studentIds.length > 0
-        ? await supabase.from('students').select('id, full_name, registration_number, program, level, email').in('id', studentIds)
+        ? await supabase.from('students').select('id, full_name, registration_number, program, level, email').in('id', studentIds).is('deleted_at', null)
         : { data: [] }
 
       // Fetch themes

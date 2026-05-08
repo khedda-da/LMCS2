@@ -84,153 +84,112 @@ export default function ProfileSettingsPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-const handleSave = async () => {
-  if (!profile) return
+  const handleSave = async () => {
+    if (!profile) return
 
-  // Add validation
-  if (!formData.first_name || !formData.last_name) {
-    toast.error('First name and last name are required')
-    return
-  }
-
-  try {
-    setSaving(true)
-
-    const updateData: UserProfile = {
-      ...profile,
-      first_name: formData.first_name?.trim() || profile.first_name,
-      last_name: formData.last_name?.trim() || profile.last_name,
-      full_name: `${formData.first_name?.trim()} ${formData.last_name?.trim()}`,
-      phone: formData.phone?.trim() || null,
-      address: formData.address?.trim() || null,
-      bio: formData.bio?.trim() || null,
-      department: formData.department?.trim() || null,
-      specialization: formData.specialization?.trim() || null,
-    }
-
-    console.log('Updating profile with:', updateData) // Debug log
-
-    const { error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', profile.id)
-
-    if (error) {
-      console.error('Update error:', error)
-      throw error
-    }
-
-    // Update both profile and formData with the complete updated data
-    setProfile(updateData)
-    setFormData(updateData)
-
-    // Try to update Supabase auth user metadata so auth.user reflects name
     try {
-      const { data: authData, error: authUpdateError } = await supabase.auth.updateUser({
-        data: {
-          full_name: updateData.full_name,
-          first_name: updateData.first_name,
-          last_name: updateData.last_name,
-        },
-      })
+      setSaving(true)
+      console.log('[v0] Saving profile with data:', formData)
 
-      if (authUpdateError) {
-        console.error('Auth update error:', authUpdateError)
-        toast.error('Profile saved, but failed to update auth metadata')
+      const updateData: any = {
+        first_name: formData.first_name || '',
+        last_name: formData.last_name || '',
+        phone: formData.phone || null,
+        address: formData.address || null,
+        bio: formData.bio || null,
+        department: formData.department || null,
+        specialization: formData.specialization || null,
       }
-    } catch (err) {
-      console.error('Auth update exception:', err)
+
+      // Update full_name based on first and last name
+      if (formData.first_name || formData.last_name) {
+        updateData.full_name = `${formData.first_name || ''} ${formData.last_name || ''}`.trim()
+      }
+
+      console.log('[v0] Sending update payload:', updateData)
+
+      const { data, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', profile.id)
+        .select()
+
+      if (error) {
+        console.error('[v0] Update error:', error)
+        throw error
+      }
+
+      console.log('[v0] Update successful, response:', data)
+
+      setProfile(prev => prev ? { ...prev, ...updateData } : null)
+      setFormData(prev => ({ ...prev, ...updateData }))
+      toast.success('Profile updated successfully')
+    } catch (error) {
+      console.error('[v0] Error saving profile:', error)
+      toast.error('Failed to save profile changes')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validation
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error('Please fill in all password fields')
+      return
     }
 
-    // Notify other parts of the app (e.g., layout) that profile changed
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('profile-updated', { detail: updateData }))
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('New passwords do not match')
+      return
     }
 
-    // Refresh the app so server components and other pages pick up changes
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long')
+      return
+    }
+
+    if (passwordForm.oldPassword === passwordForm.newPassword) {
+      toast.error('New password must be different from old password')
+      return
+    }
+
     try {
-      router.refresh()
-    } catch (err) {
-      if (typeof window !== 'undefined') window.location.reload()
-    }
+      setUpdatingPassword(true)
 
-    toast.success('Profile updated successfully!')
-  } catch (error) {
-    console.error('[v0] Error saving profile:', error)
-    toast.error(error instanceof Error ? error.message : 'Failed to save profile changes')
-  } finally {
-    setSaving(false)
-  }
-}
+      // First verify the old password by attempting to sign in
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user?.email) {
+        throw new Error('Unable to verify identity')
+      }
 
-const handlePasswordChange = async (e: React.FormEvent) => {
-  e.preventDefault()
-  
-  // Validation
-  if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-    toast.error('Please fill in all password fields')
-    return
-  }
-
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    toast.error('New passwords do not match')
-    return
-  }
-
-  if (passwordForm.newPassword.length < 8) {
-    toast.error('New password must be at least 8 characters long')
-    return
-  }
-
-  if (passwordForm.oldPassword === passwordForm.newPassword) {
-    toast.error('New password must be different from old password')
-    return
-  }
-
-  try {
-    setUpdatingPassword(true)
-
-    const response = await fetch('/api/profile/change-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        oldPassword: passwordForm.oldPassword,
-        newPassword: passwordForm.newPassword,
+      // Call an API endpoint to securely change the password
+      const response = await fetch('/api/profile/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword,
+        })
       })
-    })
 
-    const text = await response.text()
-    let data: any = undefined
-    try {
-      data = text ? JSON.parse(text) : {}
-    } catch (err) {
-      data = { raw: text }
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to change password')
+      }
+
+      toast.success('Password changed successfully')
+      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      console.error('[v0] Error changing password:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to change password')
+    } finally {
+      setUpdatingPassword(false)
     }
-    console.log('[v0] change-password response:', response.status, data, 'raw:', text)
-
-    if (!response.ok && !(data && data.success)) {
-      const errMsg = data?.error || data?.message || (data && data.raw) || 'Failed to change password'
-      throw new Error(errMsg)
-    }
-
-    // Clear the form
-    setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
-    
-    // Show success with more detail
-    toast.success('Password changed successfully! Your new password is now active.')
-    
-    // Optional: Show a confirmation dialog
-    setTimeout(() => {
-      toast.info('Please use your new password on your next login.')
-    }, 500)
-    
-  } catch (error) {
-    console.error('[v0] Error changing password:', error)
-    toast.error(error instanceof Error ? error.message : 'Failed to change password')
-  } finally {
-    setUpdatingPassword(false)
   }
-}
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -304,7 +263,7 @@ const handlePasswordChange = async (e: React.FormEvent) => {
                   <FieldLabel htmlFor="email">Email (Read-only)</FieldLabel>
                   <Input
                     id="email"
-                    value={formData.email || ''}
+                    value={profile?.email || ''}
                     readOnly
                     className="bg-slate-50 dark:bg-slate-900 cursor-not-allowed"
                   />

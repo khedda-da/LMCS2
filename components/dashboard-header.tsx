@@ -79,7 +79,9 @@ export default function DashboardHeader({ userRole }: DashboardHeaderProps) {
   const getNavItems = () => {
     switch (userRole) {
       case 'admin':
-        return []
+        return [
+          { label: 'Dashboard', href: '/dashboard/admin', icon: BarChart3 },
+        ]
       case 'supervisor':
         return [
           { label: 'My Supervisions', href: '/dashboard/supervisor', icon: BookOpen },

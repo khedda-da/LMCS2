@@ -76,9 +76,11 @@ export default function StudentsPage() {
 
   const fetchStudents = async () => {
     try {
+      // Fetch students (exclude soft-deleted)
       const { data, error } = await supabase
         .from('students')
         .select('*')
+        .is('deleted_at', null)
         .order('full_name', { ascending: true })
 
       if (error) throw error

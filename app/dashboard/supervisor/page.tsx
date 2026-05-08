@@ -125,11 +125,12 @@ export default function SupervisorDashboard() {
           return
         }
 
-        // Fetch supervisions for this supervisor
+        // Fetch supervisions for this supervisor (exclude soft-deleted)
         const { data: supervisionsData, error: supervisionsError } = await supabase
           .from('supervisions')
           .select('id, title, description, type, status, academic_year, start_date, end_date, created_at, student_id, students, teacher_id')
           .eq('teacher_id', user.id)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
 
         if (supervisionsError) throw supervisionsError
@@ -147,10 +148,12 @@ export default function SupervisorDashboard() {
 
         let studentsMap = new Map<string, Student>()
         if (studentIds.size > 0) {
+          // Fetch students (exclude soft-deleted)
           const { data: studentsData } = await supabase
             .from('students')
             .select('id, full_name, registration_number, program')
             .in('id', Array.from(studentIds))
+            .is('deleted_at', null)
 
           if (studentsData) {
             studentsData.forEach(student => {

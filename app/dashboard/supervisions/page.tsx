@@ -96,19 +96,21 @@ export default function SupervisionsPage() {
     try {
       setLoading(true)
       
-      // Fetch supervisions
+      // Fetch supervisions (exclude soft-deleted)
       const { data, error } = await supabase
         .from('supervisions')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       if (error) throw error
       setSupervisions(data || [])
 
-      // Fetch all users for name lookups
+      // Fetch all users for name lookups (exclude soft-deleted)
       const { data: usersData } = await supabase
         .from('users')
         .select('id, full_name, email')
+        .is('deleted_at', null)
 
       if (usersData) {
         const usersMap: Record<string, any> = {}

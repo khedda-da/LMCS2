@@ -21,6 +21,7 @@ export async function GET() {
     )
 
     // Fetch supervisions with related data
+    // Filter out soft-deleted supervisions (deleted_at is null)
     const { data: supervisions, error } = await supabase
       .from('supervisions')
       .select(`
@@ -37,8 +38,10 @@ export async function GET() {
         student_id,
         teacher_id,
         co_advisor_id,
-        theme_id
+        theme_id,
+        deleted_at
       `)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -53,13 +56,14 @@ export async function GET() {
       ...supervisions?.map(s => s.co_advisor_id).filter(Boolean) || []
     ])]
 
-    // Fetch students
+    // Fetch students (exclude soft-deleted)
     let studentsMap: Record<string, any> = {}
     if (studentIds.length > 0) {
       const { data: students } = await supabase
         .from('students')
         .select('id, user_id, registration_number, program, level')
         .in('id', studentIds)
+        .is('deleted_at', null)
 
       if (students) {
         const userIds = students.map(s => s.user_id)
@@ -67,6 +71,7 @@ export async function GET() {
           .from('users')
           .select('id, full_name, email')
           .in('id', userIds)
+          .is('deleted_at', null)
 
         students.forEach(student => {
           const user = studentUsers?.find(u => u.id === student.user_id)
@@ -79,13 +84,14 @@ export async function GET() {
       }
     }
 
-    // Fetch supervisors
+    // Fetch supervisors (exclude soft-deleted)
     let supervisorsMap: Record<string, any> = {}
     if (supervisorIds.length > 0) {
       const { data: supervisors } = await supabase
         .from('users')
         .select('id, full_name, email, role')
         .in('id', supervisorIds)
+        .is('deleted_at', null)
 
       supervisors?.forEach(sup => {
         supervisorsMap[sup.id] = sup
@@ -195,11 +201,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Notify all admins and directors about the new supervision
+    // Notify all admins and directors about the new supervision (exclude soft-deleted)
     const { data: admins } = await supabase
       .from('users')
       .select('id')
       .in('role', ['admin', 'director'])
+      .is('deleted_at', null)
       .neq('id', currentUserId || '')
 
     if (admins && admins.length > 0) {

@@ -120,20 +120,22 @@ export default function NewSupervisionPage() {
           return
         }
 
-        // Get all supervisors
+        // Get all supervisors (exclude soft-deleted users)
         const { data: supervisorsData, error: supError } = await supabase
           .from('users')
           .select('id, full_name, email')
           .eq('role', 'supervisor')
           .eq('is_approved', true)
+          .is('deleted_at', null)
           .order('full_name', { ascending: true })
 
         if (supError) throw supError
 
-        // Get all students that are not yet assigned to a supervision
+        // Get all students that are not yet assigned to a supervision (exclude soft-deleted)
         const { data: studentsData, error: studError } = await supabase
           .from('students')
           .select('id, full_name, email, registration_number, level')
+          .is('deleted_at', null)
           .order('full_name', { ascending: true })
 
         if (studError) throw studError

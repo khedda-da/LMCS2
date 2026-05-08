@@ -47,7 +47,18 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false)
-  const [newUserData, setNewUserData] = useState({ email: '', password: '', full_name: '', role: 'supervisor' })
+  const [newUserData, setNewUserData] = useState({ 
+    email: '', 
+    password: '', 
+    full_name: '', 
+    first_name: '',
+    last_name: '',
+    phone: '',
+    department: '',
+    specialization: '',
+    address: '',
+    role: 'supervisor' 
+  })
   const [creatingUser, setCreatingUser] = useState(false)
   const [createUserSuccess, setCreateUserSuccess] = useState<string | null>(null)
   const router = useRouter()
@@ -102,6 +113,12 @@ export default function AdminDashboard() {
       editUser: { en: 'Edit User', fr: 'Modifier Utilisateur' },
       editUserDesc: { en: 'Update user information', fr: 'Mettre a jour les informations utilisateur' },
       dismiss: { en: 'Dismiss', fr: 'Fermer' },
+      firstName: { en: 'First Name', fr: 'Prenom' },
+      lastName: { en: 'Last Name', fr: 'Nom' },
+      phone: { en: 'Phone', fr: 'Telephone' },
+      department: { en: 'Department', fr: 'Departement' },
+      specialization: { en: 'Specialization', fr: 'Specialite' },
+      address: { en: 'Address', fr: 'Adresse' },
     }
     return translations[key]?.[language] || key
   }
@@ -148,9 +165,11 @@ export default function AdminDashboard() {
         setUsers(usersData || [])
       }
 
+      // Fetch supervisions (exclude soft-deleted)
       const { data: supervisionsData } = await supabase
         .from('supervisions')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -259,8 +278,8 @@ export default function AdminDashboard() {
   }
 
   const handleCreateUser = async () => {
-    if (!newUserData.email || !newUserData.password || !newUserData.full_name) {
-      setError(language === 'fr' ? 'Tous les champs sont requis' : 'All fields are required')
+    if (!newUserData.email || !newUserData.password || !newUserData.first_name || !newUserData.last_name) {
+      setError(language === 'fr' ? 'Le prenom, nom, email et mot de passe sont requis' : 'First name, last name, email and password are required')
       return
     }
 
@@ -268,11 +287,13 @@ export default function AdminDashboard() {
     setError(null)
     setCreateUserSuccess(null)
 
+    const full_name = `${newUserData.first_name} ${newUserData.last_name}`.trim()
+
     try {
       const response = await fetch('/api/admin/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUserData)
+        body: JSON.stringify({ ...newUserData, full_name })
       })
 
       if (!response.ok) {
@@ -290,7 +311,18 @@ export default function AdminDashboard() {
       }])
 
       setCreateUserSuccess(t('userCreated'))
-      setNewUserData({ email: '', password: '', full_name: '', role: 'supervisor' })
+      setNewUserData({ 
+        email: '', 
+        password: '', 
+        full_name: '', 
+        first_name: '',
+        last_name: '',
+        phone: '',
+        department: '',
+        specialization: '',
+        address: '',
+        role: 'supervisor' 
+      })
       
       setTimeout(() => {
         setCreateUserDialogOpen(false)
@@ -355,9 +387,9 @@ export default function AdminDashboard() {
         </Card>
       ) : (
         <>
-          {/* Stats Cards - Compact width */}
-          <div className="flex flex-wrap gap-4">
-            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -369,7 +401,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
+            <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -381,7 +413,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="w-auto min-w-[180px] flex-1 max-w-[220px]">
+            <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -394,7 +426,7 @@ export default function AdminDashboard() {
             </Card>
           </div>
 
-          {/* User Management Card - Full width */}
+          {/* Tabs */}
           <Tabs defaultValue="users" className="space-y-4">
             <TabsList>
               <TabsTrigger value="users" className="gap-2">
@@ -403,9 +435,10 @@ export default function AdminDashboard() {
               </TabsTrigger>
             </TabsList>
 
+            {/* User Management Tab */}
             <TabsContent value="users">
-              <Card className="w-full">
-                <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle>{t('userManagement')}</CardTitle>
                     <CardDescription>
@@ -414,6 +447,8 @@ export default function AdminDashboard() {
                         : language === 'fr' ? 'Tous les utilisateurs sont approuves' : 'All users are approved'}
                     </CardDescription>
                   </div>
+
+                  {/* Create User Dialog */}
                   <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="gap-2">
@@ -421,8 +456,8 @@ export default function AdminDashboard() {
                         {t('createUser')}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
+                    <DialogContent className="flex flex-col max-h-[90vh]">
+                      <DialogHeader className="flex-shrink-0">
                         <DialogTitle>{t('createNewUser')}</DialogTitle>
                         <DialogDescription>
                           {language === 'fr' 
@@ -430,17 +465,31 @@ export default function AdminDashboard() {
                             : 'Create a new user account with email and password'}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="new-full-name">{t('fullName')}</Label>
-                          <Input
-                            id="new-full-name"
-                            placeholder="John Doe"
-                            value={newUserData.full_name}
-                            onChange={(e) => setNewUserData({ ...newUserData, full_name: e.target.value })}
-                          />
+
+                      {/* Scrollable fields area */}
+                      <div className="flex-1 overflow-y-auto pr-1 space-y-3 py-2 min-h-0">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="new-first-name">{t('firstName')}</Label>
+                            <Input
+                              id="new-first-name"
+                              placeholder="John"
+                              value={newUserData.first_name}
+                              onChange={(e) => setNewUserData({ ...newUserData, first_name: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="new-last-name">{t('lastName')}</Label>
+                            <Input
+                              id="new-last-name"
+                              placeholder="Doe"
+                              value={newUserData.last_name}
+                              onChange={(e) => setNewUserData({ ...newUserData, last_name: e.target.value })}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
+
+                        <div className="space-y-1">
                           <Label htmlFor="new-email">{t('email')}</Label>
                           <Input
                             id="new-email"
@@ -450,7 +499,8 @@ export default function AdminDashboard() {
                             onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                           />
                         </div>
-                        <div className="space-y-2">
+
+                        <div className="space-y-1">
                           <Label htmlFor="new-password">{t('password')}</Label>
                           <Input
                             id="new-password"
@@ -460,7 +510,50 @@ export default function AdminDashboard() {
                             onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                           />
                         </div>
-                        <div className="space-y-2">
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="new-phone">{t('phone')}</Label>
+                            <Input
+                              id="new-phone"
+                              type="tel"
+                              placeholder="+1234567890"
+                              value={newUserData.phone}
+                              onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="new-department">{t('department')}</Label>
+                            <Input
+                              id="new-department"
+                              placeholder="e.g., Computer Science"
+                              value={newUserData.department}
+                              onChange={(e) => setNewUserData({ ...newUserData, department: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="new-specialization">{t('specialization')}</Label>
+                          <Input
+                            id="new-specialization"
+                            placeholder="e.g., AI/Machine Learning"
+                            value={newUserData.specialization}
+                            onChange={(e) => setNewUserData({ ...newUserData, specialization: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="new-address">{t('address')}</Label>
+                          <Input
+                            id="new-address"
+                            placeholder="123 Main St..."
+                            value={newUserData.address}
+                            onChange={(e) => setNewUserData({ ...newUserData, address: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
                           <Label htmlFor="new-role">{t('role')}</Label>
                           <Select 
                             value={newUserData.role} 
@@ -476,24 +569,28 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
+
                         {createUserSuccess && (
                           <div className="p-3 rounded-lg bg-green-50 border border-green-200 flex gap-2 items-center">
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
                             <p className="text-sm text-green-600">{createUserSuccess}</p>
                           </div>
                         )}
-                        <div className="flex gap-2 justify-end pt-4">
-                          <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
-                            {t('cancel')}
-                          </Button>
-                          <Button onClick={handleCreateUser} disabled={creatingUser}>
-                            {creatingUser ? t('creating') : t('createUser')}
-                          </Button>
-                        </div>
+                      </div>
+
+                      {/* Action buttons — always visible, pinned at bottom */}
+                      <div className="flex-shrink-0 flex gap-2 justify-end pt-3 border-t mt-1">
+                        <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
+                          {t('cancel')}
+                        </Button>
+                        <Button onClick={handleCreateUser} disabled={creatingUser}>
+                          {creatingUser ? t('creating') : t('createUser')}
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
@@ -518,8 +615,8 @@ export default function AdminDashboard() {
                     </Select>
                   </div>
 
-                  <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full min-w-[600px]">
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
                       <thead className="bg-muted/50">
                         <tr>
                           <th className="px-4 py-3 text-left text-sm font-medium">{t('name')}</th>
@@ -578,18 +675,16 @@ export default function AdminDashboard() {
                                       </Button>
                                     </>
                                   ) : (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          setEditingUser(user)
-                                          setEditDialogOpen(true)
-                                        }}
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                    </>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingUser(user)
+                                        setEditDialogOpen(true)
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
                                   )}
                                 </div>
                               </td>

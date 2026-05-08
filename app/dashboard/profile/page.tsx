@@ -10,9 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/components/providers'
-import { Upload, Mail, User, Loader2, Lock, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Upload, Mail, User, Loader2, Lock, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 
 interface UserProfile {
   id: string
@@ -32,11 +31,7 @@ interface UserProfile {
   is_approved?: boolean
 }
 
-interface PasswordForm {
-  oldPassword: string
-  newPassword: string
-  confirmPassword: string
-}
+
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -50,12 +45,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string>('')
-  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  })
-  const [updatingPassword, setUpdatingPassword] = useState(false)
 
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
@@ -205,62 +194,6 @@ export default function ProfilePage() {
     } finally {
       setUploading(false)
     }
-  }
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      toast.error('Please fill in all password fields')
-      return
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match')
-      return
-    }
-
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters long')
-      return
-    }
-
-    if (passwordForm.oldPassword === passwordForm.newPassword) {
-      toast.error('New password must be different from old password')
-      return
-    }
-
-    try {
-      setUpdatingPassword(true)
-
-      const response = await fetch('/api/profile/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to change password')
-      }
-
-      toast.success('Password changed successfully')
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
-    } catch (error) {
-      console.error('[v0] Error changing password:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to change password')
-    } finally {
-      setUpdatingPassword(false)
-    }
-  }
-
-  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setPasswordForm(prev => ({ ...prev, [name]: value }))
   }
 
   if (loading) {
@@ -449,7 +382,7 @@ export default function ProfilePage() {
               onClick={() => router.push('/dashboard/profile/settings')}
               className="btn-primary rounded-lg"
             >
-              Edit Profile Settings
+              Edit Profile
             </Button>
           </TabsContent>
 
@@ -466,89 +399,24 @@ export default function ProfilePage() {
                   <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white">Change Password</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Security Settings</h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Update your password to keep your account secure
+                    Manage your password and account security
                   </p>
                 </div>
               </div>
               
               <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="oldPassword">Current Password</FieldLabel>
-                      <Input
-                        id="oldPassword"
-                        name="oldPassword"
-                        type="password"
-                        value={passwordForm.oldPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="Enter your current password"
-                        required
-                      />
-                    </Field>
-                  </FieldGroup>
-
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="newPassword">New Password</FieldLabel>
-                      <Input
-                        id="newPassword"
-                        name="newPassword"
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="Enter your new password (min 8 characters)"
-                        required
-                      />
-                    </Field>
-                  </FieldGroup>
-
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="confirmPassword">Confirm New Password</FieldLabel>
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="Confirm your new password"
-                        required
-                      />
-                    </Field>
-                  </FieldGroup>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      type="submit"
-                      disabled={updatingPassword}
-                      className="btn-primary rounded-lg"
-                    >
-                      {updatingPassword ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Change Password
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })}
-                      disabled={updatingPassword}
-                      className="rounded-lg"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </form>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  To change your password or manage other security settings, go to your Profile Settings page.
+                </p>
+                <Button 
+                  onClick={() => router.push('/dashboard/profile/settings')}
+                  className="btn-primary rounded-lg"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Go to Security Settings
+                </Button>
               </div>
             </div>
 

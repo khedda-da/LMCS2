@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,25 +79,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the password change in audit logs
+    // Also store password hash in database for backup/restore capability
     try {
-      const { error: auditError } = await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: user.id,
-          action: 'UPDATE',
-          entity_type: 'user',
-          entity_id: user.id,
-          changes: {
-            field: 'password',
-            old_value: '***',
-            new_value: '***'
-          },
-        })
-      if (auditError) console.error('[v0] Error logging password change:', auditError)
-    } catch (err) {
-      console.error('[v0] Exception logging password change:', err)
+      const saltRounds = 10
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds)
+      
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ password_hash: passwordHash })
+        .eq('id', user.id)
+
+      if (dbError) {
+        console.error('[v0] Warning: Failed to store password hash in database:', dbError)
+        // Don't fail the password change if hash storage fails - it's not critical
+      } else {
+        console.log('[v0] Password hash stored in database for user:', user.id)
+      }
+    } catch (hashError) {
+      console.error('[v0] Error hashing password:', hashError)
+      // Continue - password has been updated in Supabase Auth
     }
+
+    // Log the password change in audit logs
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: user.id,
+        action: 'UPDATE',
+        entity_type: 'user',
+        entity_id: user.id,
+        changes: {
+          field: 'password',
+          old_value: '***',
+          new_value: '***'
+        },
+      })
+      .catch(err => console.error('[v0] Error logging password change:', err))
 
     return NextResponse.json({
       success: true,
@@ -104,11 +122,8 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[v0] Unexpected error in password change:', error)
-    try {
-      console.error('[v0] Error stack:', (error as Error)?.stack)
-    } catch {}
     return NextResponse.json(
-      { error: (error as Error)?.message || String(error) },
+      { error: 'An unexpected error occurred. Please try again.' },
       { status: 500 }
     )
   }

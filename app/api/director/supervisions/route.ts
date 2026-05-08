@@ -22,20 +22,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get all directors
+    // Get all directors (exclude soft-deleted)
     const { data: directors } = await supabase
       .from('users')
       .select('id')
       .eq('role', 'director')
+      .is('deleted_at', null)
 
     if (!directors || directors.length === 0) {
       return NextResponse.json({ notified: 0 })
     }
 
-    // Get all supervisions with recent activity
+    // Get all supervisions with recent activity (exclude soft-deleted)
     const { data: supervisions } = await supabase
       .from('supervisions')
       .select('id, title, status, updated_at')
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
       .limit(50)
 
@@ -53,11 +55,12 @@ export async function GET(request: NextRequest) {
     const directorIds = directors.map(d => d.id)
     
     if (directorIds.length > 0 && supervisions.length > 0) {
-      // Get high priority items (pending or suspended)
+      // Get high priority items (pending or suspended) - exclude soft-deleted
       const { data: criticalItems } = await supabase
         .from('supervisions')
         .select('id, title, status')
         .in('status', ['pending', 'suspended', 'on_hold'])
+        .is('deleted_at', null)
         .limit(5)
 
       const criticalCount = criticalItems?.length || 0

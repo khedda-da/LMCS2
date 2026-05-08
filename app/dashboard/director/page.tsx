@@ -159,9 +159,11 @@ export default function DirectorDashboard() {
           return
         }
 
+        // Fetch supervisions (exclude soft-deleted)
         const { data: supervisionsData, error: supervisionsError } = await supabase
           .from('supervisions')
           .select('*')
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
 
         if (supervisionsError) throw supervisionsError
@@ -201,11 +203,13 @@ export default function DirectorDashboard() {
           byYear,
         })
 
+        // Fetch supervisors (exclude soft-deleted)
         const { data: supervisorsData, error: supervisorsError } = await supabase
           .from('users')
           .select('id, full_name, email')
           .eq('role', 'supervisor')
           .eq('is_approved', true)
+          .is('deleted_at', null)
 
         if (supervisorsError) throw supervisorsError
 
