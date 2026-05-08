@@ -24,7 +24,7 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled');
+    CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'suspended');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
