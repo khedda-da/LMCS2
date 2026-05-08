@@ -19,12 +19,12 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE supervision_status AS ENUM ('active', 'pending', 'completed', 'suspended', 'on_hold', 'abandoned', 'defended');
+    CREATE TYPE supervision_status AS ENUM ('active', 'pending', 'completed',  'on_hold', 'suspended', 'abandoned', 'defended');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'suspended');
+    CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
