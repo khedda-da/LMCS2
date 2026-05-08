@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Validate status
-    const validStatuses = ['active', 'pending', 'completed', 'on_hold', 'cancelled', 'defended', 'abandoned']
+    const validStatuses = ['active', 'pending', 'completed', 'on_hold', 'suspended', 'defended', 'abandoned']
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest) {
       pending: 'Pending',
       completed: 'Completed',
       on_hold: 'On Hold',
-      cancelled: 'Cancelled',
+      suspended: 'Suspended',
       defended: 'Defended',
       abandoned: 'Abandoned',
     }
