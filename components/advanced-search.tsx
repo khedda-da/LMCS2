@@ -245,7 +245,7 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
                     <SelectItem value="active">{t('active')}</SelectItem>
                     <SelectItem value="pending">{t('pending')}</SelectItem>
                     <SelectItem value="completed">{t('completed')}</SelectItem>
-                    <SelectItem value="on-hold">{t('onHold')}</SelectItem>
+                    <SelectItem value="on_hold">{t('onHold')}</SelectItem>
                     <SelectItem value="suspended">{t('suspended')}</SelectItem>
                   </SelectContent>
                 </Select>
