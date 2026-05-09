@@ -88,7 +88,7 @@ export default function SupervisorDashboard() {
     completed: t.completed,
     suspended: t.suspended,
     pending: language === 'fr' ? 'En attente' : 'Pending',
-    'on_hold': language === 'fr' ? 'En pause' : 'On Hold',
+    'on-hold': language === 'fr' ? 'En pause' : 'On Hold',
     defended: language === 'fr' ? 'Soutenu' : 'Defended',
     abandoned: language === 'fr' ? 'Abandonne' : 'Abandoned',
   }
@@ -100,7 +100,7 @@ export default function SupervisorDashboard() {
     suspended: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
     abandoned: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
     pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
-    'on_hold': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
+    'on-hold': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
   }
 
   useEffect(() => {
@@ -412,7 +412,7 @@ export default function SupervisorDashboard() {
                                   <SelectItem value="active">{t.active}</SelectItem>
                                   <SelectItem value="completed">{t.completed}</SelectItem>
                                   <SelectItem value="defended">{statusLabels.defended}</SelectItem>
-                                  <SelectItem value="on_hold">{statusLabels['on_hold']}</SelectItem>
+                                  <SelectItem value="on-hold">{statusLabels['on-hold']}</SelectItem>
                                   <SelectItem value="suspended">{t.suspended}</SelectItem>
                                   <SelectItem value="abandoned">{statusLabels.abandoned}</SelectItem>
                                 </SelectContent>

@@ -79,7 +79,7 @@ export default function SupervisorSupervisionDetailPage() {
       active: t.active,
       pending: t.pending,
       completed: t.completed,
-      'on_hold': t.onHold,
+      'on-hold': t.onHold,
       suspended: t.suspended,
       defended: t.defended,
       abandoned: t.abandoned,
@@ -93,7 +93,7 @@ export default function SupervisorSupervisionDetailPage() {
       completed: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
       defended: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
       pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
-      'on_hold': 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+      'on-hold': 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
       suspended: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
       abandoned: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
     }
@@ -285,7 +285,7 @@ export default function SupervisorSupervisionDetailPage() {
                         <SelectItem value="active">{t.active}</SelectItem>
                         <SelectItem value="completed">{t.completed}</SelectItem>
                         <SelectItem value="defended">{t.defended}</SelectItem>
-                        <SelectItem value="on_hold">{t.onHold}</SelectItem>
+                        <SelectItem value="on-hold">{t.onHold}</SelectItem>
                         <SelectItem value="suspended">{t.suspended}</SelectItem>
                         <SelectItem value="abandoned">{t.abandoned}</SelectItem>
                       </SelectContent>
