@@ -79,7 +79,7 @@ export default function ReportsPage() {
       setStats(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      console.error('[v0] Error fetching statistics:', err)
+      console.error('Error fetching statistics:', err)
     } finally {
       setLoading(false)
     }

@@ -26,12 +26,10 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Get role-specific statistics
     let stats: Record<string, any> = {}
 
     switch (role) {
       case 'supervisor':
-        // Get supervisor statistics
         const { data: supervisionData } = await supabase
           .from('supervisions')
           .select('id, status')
@@ -45,7 +43,6 @@ export async function GET(request: NextRequest) {
         break
 
       case 'student':
-        // Get student statistics
         const { data: studentSupervisions } = await supabase
           .from('students')
           .select('supervisions:supervision_id(*)')
@@ -59,7 +56,6 @@ export async function GET(request: NextRequest) {
         break
 
       case 'director':
-        // Get director statistics
         const { data: allSupervisions } = await supabase
           .from('supervisions')
           .select('id, status')
@@ -72,7 +68,6 @@ export async function GET(request: NextRequest) {
         break
 
       case 'admin':
-        // Get admin statistics
         const { data: users } = await supabase
           .from('users')
           .select('id')
@@ -90,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats)
   } catch (error) {
-    console.error('[v0] Error fetching role statistics:', error)
+    console.error(' Error fetching role statistics:', error)
     return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 })
   }
 }

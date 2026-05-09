@@ -52,13 +52,13 @@ export async function createNotification(input: NotificationInput) {
       })
 
     if (error) {
-      console.error('[v0] Notification creation error:', error)
+      console.error('  Notification creation error:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to create notification:', error)
+    console.error('  Failed to create notification:', error)
     return false
   }
 }
@@ -95,13 +95,13 @@ export async function createNotificationsForUsers(
       .insert(notifications)
 
     if (error) {
-      console.error('[v0] Bulk notification error:', error)
+      console.error('  Bulk notification error:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to create bulk notifications:', error)
+    console.error('  Failed to create bulk notifications:', error)
     return false
   }
 }
@@ -127,13 +127,13 @@ export async function getUserNotifications(userId: string, unreadOnly: boolean =
       .limit(100)
 
     if (error) {
-      console.error('[v0] Error fetching notifications:', error)
+      console.error('  Error fetching notifications:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('[v0] Failed to fetch notifications:', error)
+    console.error('  Failed to fetch notifications:', error)
     return []
   }
 }
@@ -151,13 +151,13 @@ export async function markNotificationAsRead(notificationId: string) {
       .eq('id', notificationId)
 
     if (error) {
-      console.error('[v0] Error marking notification as read:', error)
+      console.error('  Error marking notification as read:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to mark notification as read:', error)
+    console.error('  Failed to mark notification as read:', error)
     return false
   }
 }
@@ -176,13 +176,13 @@ export async function markAllNotificationsAsRead(userId: string) {
       .eq('read', false)
 
     if (error) {
-      console.error('[v0] Error marking all notifications as read:', error)
+      console.error('  Error marking all notifications as read:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to mark all notifications as read:', error)
+    console.error('  Failed to mark all notifications as read:', error)
     return false
   }
 }
@@ -200,13 +200,13 @@ export async function deleteNotification(notificationId: string) {
       .eq('id', notificationId)
 
     if (error) {
-      console.error('[v0] Error deleting notification:', error)
+      console.error('  Error deleting notification:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to delete notification:', error)
+    console.error('  Failed to delete notification:', error)
     return false
   }
 }
@@ -224,13 +224,13 @@ export async function deleteAllNotifications(userId: string) {
       .eq('user_id', userId)
 
     if (error) {
-      console.error('[v0] Error deleting all notifications:', error)
+      console.error('  Error deleting all notifications:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to delete all notifications:', error)
+    console.error('  Failed to delete all notifications:', error)
     return false
   }
 }
@@ -249,13 +249,13 @@ export async function deleteAllUnreadNotifications(userId: string) {
       .eq('read', false)
 
     if (error) {
-      console.error('[v0] Error deleting unread notifications:', error)
+      console.error('  Error deleting unread notifications:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[v0] Failed to delete unread notifications:', error)
+    console.error('  Failed to delete unread notifications:', error)
     return false
   }
 }

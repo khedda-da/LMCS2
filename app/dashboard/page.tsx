@@ -30,13 +30,11 @@ export default function DashboardPage() {
           return
         }
 
-        // Check if user is approved
         if (!userData.is_approved) {
           router.push('/auth/pending-approval')
           return
         }
 
-        // Route based on role
         switch (userData.role) {
           case 'admin':
             router.push('/dashboard/admin')

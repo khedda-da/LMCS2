@@ -18,8 +18,7 @@ export async function GET() {
       }
     )
 
-    // First get all students from students table
-    // Filter out soft-deleted students (deleted_at is null)
+    
     const { data: students, error: studentsError } = await supabase
       .from('students')
       .select('id, user_id, registration_number, program, level, academic_year, deleted_at')
@@ -27,7 +26,7 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (studentsError) {
-      console.error('[v0] Error fetching students:', studentsError)
+      console.error('  Error fetching students:', studentsError)
       return NextResponse.json({ error: studentsError.message, students: [] }, { status: 200 })
     }
 
@@ -56,7 +55,7 @@ export async function GET() {
 
     return NextResponse.json({ students: enrichedStudents })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to fetch students', students: [] }, { status: 200 })
   }
 }

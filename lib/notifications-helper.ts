@@ -21,10 +21,10 @@ export async function createNotification(
       })
 
     if (error) {
-      console.error('[v0] Error creating notification:', error)
+      console.error('  Error creating notification:', error)
     }
   } catch (error) {
-    console.error('[v0] Notification creation failed:', error)
+    console.error('  Notification creation failed:', error)
   }
 }
 
@@ -54,9 +54,9 @@ export async function createAuditLog(
       })
 
     if (error) {
-      console.error('[v0] Error creating audit log:', error)
+      console.error('  Error creating audit log:', error)
     }
   } catch (error) {
-    console.error('[v0] Audit log creation failed:', error)
+    console.error('  Audit log creation failed:', error)
   }
 }

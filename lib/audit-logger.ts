@@ -15,7 +15,7 @@ export async function logAuditEvent(entry: AuditLogEntry) {
   try {
     // Use service role key to bypass RLS for audit logging
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('[v0] Missing Supabase environment variables for audit logging')
+      console.error('  Missing Supabase environment variables for audit logging')
       return
     }
 
@@ -49,12 +49,12 @@ export async function logAuditEvent(entry: AuditLogEntry) {
       .insert(insertData)
 
     if (error) {
-      console.error('[v0] Audit log error:', error.message, error.code)
+      console.error('  Audit log error:', error.message, error.code)
     } else {
-      console.log('[v0] Audit log created for action:', entry.action)
+      console.log('  Audit log created for action:', entry.action)
     }
   } catch (error) {
-    console.error('[v0] Failed to log audit event:', error)
+    console.error('  Failed to log audit event:', error)
   }
 }
 
@@ -81,13 +81,13 @@ export async function getAuditLogs(
       .range(offset, offset + limit - 1)
 
     if (error) {
-      console.error('[v0] Error fetching audit logs:', error)
+      console.error('  Error fetching audit logs:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('[v0] Failed to fetch audit logs:', error)
+    console.error('  Failed to fetch audit logs:', error)
     return []
   }
 }

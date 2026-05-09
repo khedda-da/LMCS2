@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Get all admins and directors
     const { data: admins } = await supabase
       .from('users')
       .select('id, email, full_name, role')
@@ -31,7 +30,6 @@ export async function POST(request: NextRequest) {
     const adminIds = admins.filter(u => u.role === 'admin').map(u => u.id)
     const directorIds = admins.filter(u => u.role === 'director').map(u => u.id)
 
-    // Send test notifications to admins
     if (adminIds.length > 0) {
       await createNotificationsForUsers(
         adminIds,
@@ -42,7 +40,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send test notifications to directors
     if (directorIds.length > 0) {
       await createNotificationsForUsers(
         directorIds,
@@ -62,7 +59,7 @@ export async function POST(request: NextRequest) {
       directors: admins.filter(u => u.role === 'director').map(u => ({ id: u.id, email: u.email })),
     })
   } catch (error) {
-    console.error('[v0] Error sending test notifications:', error)
+    console.error(' Error sending test notifications:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

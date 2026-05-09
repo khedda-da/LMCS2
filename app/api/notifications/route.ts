@@ -28,11 +28,10 @@ export async function GET(request: NextRequest) {
     const { data: notifications, error } = await query
 
     if (error) {
-      console.error('[v0] Error fetching notifications:', error)
+      console.error(' Error fetching notifications:', error)
       return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
     }
 
-    // Get unread count
     const { count: unreadCount } = await supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
       unreadCount: unreadCount || 0
     })
   } catch (error) {
-    console.error('[v0] Error in notifications API:', error)
+    console.error('  Error in notifications API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -62,7 +61,6 @@ export async function PATCH(request: NextRequest) {
     const { notificationId, deleteAll, deleteNotification } = body
 
     if (deleteAll) {
-      // Delete all unread notifications
       const { error } = await supabase
         .from('notifications')
         .delete()
@@ -70,7 +68,7 @@ export async function PATCH(request: NextRequest) {
         .eq('read', false)
 
       if (error) {
-        console.error('[v0] Error deleting all notifications:', error)
+        console.error('  Error deleting all notifications:', error)
         return NextResponse.json({ error: 'Failed to delete notifications' }, { status: 500 })
       }
 
@@ -87,7 +85,7 @@ export async function PATCH(request: NextRequest) {
         .eq('user_id', user.id)
 
       if (error) {
-        console.error('[v0] Error deleting notification:', error)
+        console.error(' Error deleting notification:', error)
         return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 })
       }
 
@@ -96,7 +94,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   } catch (error) {
-    console.error('[v0] Error in notifications PATCH:', error)
+    console.error(' Error in notifications PATCH:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

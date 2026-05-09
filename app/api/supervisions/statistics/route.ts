@@ -10,12 +10,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get total supervisions count
     const { count: totalSupervisions } = await supabase
       .from('supervisions')
       .select('*', { count: 'exact' })
 
-    // Get supervisions by status
     const { data: statusData } = await supabase
       .from('supervisions')
       .select('status', { count: 'exact' })
@@ -26,7 +24,6 @@ export async function GET(request: NextRequest) {
       pending: statusData?.filter((s: any) => s.status === 'pending').length || 0,
     }
 
-    // Get average progress
     const { data: progressData } = await supabase
       .from('supervisions')
       .select('progress_percentage')
@@ -41,7 +38,7 @@ export async function GET(request: NextRequest) {
       averageProgress: avgProgress,
     })
   } catch (error) {
-    console.error('[v0] Supervision statistics error:', error)
+    console.error(' Supervision statistics error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get statistics' },
       { status: 500 }

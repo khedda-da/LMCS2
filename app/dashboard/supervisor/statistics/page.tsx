@@ -169,7 +169,7 @@ export default function SupervisorStatisticsPage() {
           supervisionsList: enrichedSupervisions,
         })
       } catch (error) {
-        console.error('[v0] Error fetching supervision stats:', error)
+        console.error('Error fetching supervision stats:', error)
       } finally {
         setLoading(false)
       }

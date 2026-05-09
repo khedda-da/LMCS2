@@ -21,13 +21,11 @@ export async function GET(request: NextRequest) {
 
     switch (role) {
       case 'student': {
-        // Count supervisions assigned to this student
         const { count: supervisionCount } = await supabase
           .from('supervisions')
           .select('*', { count: 'exact' })
           .contains('students', [userId])
 
-        // Get average rating/progress
         const { data: supervisions } = await supabase
           .from('supervisions')
           .select('progress_percentage')
@@ -47,13 +45,11 @@ export async function GET(request: NextRequest) {
       }
 
       case 'supervisor': {
-        // Count supervisions assigned to this supervisor
         const { count: supervisionCount } = await supabase
           .from('supervisions')
           .select('*', { count: 'exact' })
           .contains('supervisors', [userId])
 
-        // Count students under supervision
         const { data: supervisions } = await supabase
           .from('supervisions')
           .select('students')
@@ -74,17 +70,14 @@ export async function GET(request: NextRequest) {
       }
 
       case 'director': {
-        // Count all supervisions
         const { count: allSupervisions } = await supabase
           .from('supervisions')
           .select('*', { count: 'exact' })
 
-        // Count all users
         const { count: totalUsers } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
 
-        // Count approvals pending
         const { count: pendingApprovals } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
@@ -100,17 +93,14 @@ export async function GET(request: NextRequest) {
       }
 
       case 'admin': {
-        // Count all supervisions
         const { count: allSupervisions } = await supabase
           .from('supervisions')
           .select('*', { count: 'exact' })
 
-        // Count all users
         const { count: totalUsers } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
 
-        // Count approved users
         const { count: approvedUsers } = await supabase
           .from('users')
           .select('*', { count: 'exact' })
@@ -131,7 +121,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats)
   } catch (error) {
-    console.error('[v0] Statistics error:', error)
+    console.error('  Statistics error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get statistics' },
       { status: 500 }

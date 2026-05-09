@@ -58,7 +58,7 @@ export default function SetupPage() {
       : 'Your administrator account has been created successfully. Redirecting to login...',
   }
 
-  // Secret setup key - change this in production or use env variable
+  // Secret setup key - 
   const SETUP_KEY = process.env.NEXT_PUBLIC_SETUP_KEY || 'LMCS-INIT-2026'
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function SetupPage() {
         console.error('Error checking admins:', error)
         setSetupAllowed(false)
       } else {
-        // Setup is only allowed if NO admin/director exists
+        
         setSetupAllowed(!admins || admins.length === 0)
       }
     } catch (err) {
@@ -148,7 +148,7 @@ export default function SetupPage() {
     }
   }
 
-  // Shared top-right toggle buttons — same pattern as the rest of the site
+  
   const TopBarButtons = () => (
     <div className="fixed top-4 right-4 flex items-center gap-2 z-50">
       <Button

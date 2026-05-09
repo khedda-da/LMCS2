@@ -36,14 +36,13 @@ export async function POST(request: Request) {
         break
 
       case 'optimize_database':
-        // Run VACUUM and ANALYZE (if supported)
-        // Note: This is a placeholder - actual implementation depends on your DB setup
+        
         result = { optimized: true, message: 'Database optimization scheduled' }
         break
 
       case 'clear_notifications':
-        // Delete old notifications (older than 90 days)
-        const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        // Delete old notifications (older than 1 day)
+        const ninetyDaysAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
         const { data: deletedNotifications } = await supabase
           .from('notifications')
           .delete()
@@ -52,7 +51,7 @@ export async function POST(request: Request) {
         break
 
       case 'health_check':
-        // Check system health
+        
         const { data: usersCount } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true })

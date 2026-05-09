@@ -18,8 +18,7 @@ export async function GET() {
       }
     )
 
-    // Fetch users who are supervisors or have supervisor role
-    // Filter out soft-deleted users (deleted_at is null)
+    
     const { data: supervisors, error } = await supabase
       .from('users')
       .select('id, full_name, email, role, department, is_approved, deleted_at')
@@ -29,13 +28,13 @@ export async function GET() {
       .order('full_name', { ascending: true })
 
     if (error) {
-      console.error('[v0] Error fetching supervisors:', error)
+      console.error(' Error fetching supervisors:', error)
       return NextResponse.json({ error: error.message, supervisors: [] }, { status: 200 })
     }
 
     return NextResponse.json({ supervisors: supervisors || [] })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to fetch supervisors', supervisors: [] }, { status: 200 })
   }
 }

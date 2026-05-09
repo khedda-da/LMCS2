@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true, 
       user_metadata: {
         full_name,
         role
@@ -96,13 +96,12 @@ export async function POST(request: Request) {
           address: address || null,
           role,
           requested_role: role,
-          is_approved: true, // Auto-approve accounts created by admin
+          is_approved: true, 
         }
       ])
 
     if (dbError) {
       console.error('Database error:', dbError)
-      // Try to delete the auth user if profile creation failed
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
         { error: 'Failed to create user profile: ' + dbError.message },
@@ -110,7 +109,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Notify all admins about new user creation (not directors)
     const { data: notifyUsers } = await supabaseAdmin
       .from('users')
       .select('id')

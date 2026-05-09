@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('[v0] Missing Supabase environment variables')
+      console.error('  Missing Supabase environment variables')
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // If we can't get from auth, try getting from session
     if (!adminUserId) {
-      console.log('[v0] Using service role for delete operation')
+      console.log(' Using service role for delete operation')
     }
     
     // Get user info before deleting for notification
@@ -70,19 +70,16 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
 
     if (softDeleteError) {
-      console.error('[v0] Soft delete user error:', softDeleteError)
+      console.error('  Soft delete user error:', softDeleteError)
       return NextResponse.json(
         { error: softDeleteError.message },
         { status: 500 }
       )
     }
 
-    console.log('[v0] User soft deleted (marked as deleted):', userId)
+    console.log(' User soft deleted (marked as deleted):', userId)
 
-    // Note: Auth user is NOT deleted - user can be restored from backup with their credentials
-    // Soft delete in DB is sufficient for recovery - don't delete from Supabase Auth
-
-    // Notify all admins about user deletion (not directors, exclude soft-deleted)
+   
     const { data: notifyUsers } = await supabase
       .from('users')
       .select('id')
@@ -98,7 +95,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the deletion in background (fire and forget) so it doesn't block the response
+    
     const auditUserId = adminUserId || 'system'
     const auditUserEmail = adminEmail || 'system'
     
@@ -114,14 +111,14 @@ export async function POST(request: NextRequest) {
         deleted_name: userData?.full_name,
       },
       details: `Deleted user: ${userData?.full_name} (${userData?.email})`,
-    }).catch(err => console.error('[v0] Background audit log failed:', err))
+    }).catch(err => console.error('  Background audit log failed:', err))
 
     return NextResponse.json({
       success: true,
       message: 'User deleted successfully',
     })
   } catch (error) {
-    console.error('[v0] Delete user error:', error)
+    console.error(' Delete user error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete user' },
       { status: 500 }

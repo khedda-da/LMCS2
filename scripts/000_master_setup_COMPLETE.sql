@@ -1,37 +1,19 @@
 -- =====================================================
 -- LMCS - Supervision Tracking System
--- MASTER DATABASE SETUP SCRIPT (COMPLETE & CONSISTENT)
--- Run this ONE script and ignore all other SQL files
+-- COMPLETE MERGED DATABASE SETUP SCRIPT
+-- Includes proper enum migration for suspended status
+-- Run this ONE script in Supabase SQL Editor
 -- =====================================================
 
 -- =====================================================
--- STEP 1: CREATE ENUM TYPES
+-- STEP 1: DROP ENUM TYPES SAFELY (if they exist)
 -- =====================================================
 
-DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('admin', 'supervisor', 'director');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+-- Drop dependent objects first
+DROP TRIGGER IF EXISTS update_supervisions_updated_at ON public.supervisions;
+DROP TRIGGER IF EXISTS notify_supervision_status ON public.supervisions;
 
-DO $$ BEGIN
-    CREATE TYPE supervision_type AS ENUM ('pfe', 'master', 'doctorate', 'internship', 'spe', 'research');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE supervision_status AS ENUM ('active', 'pending', 'completed',  'on_hold', 'suspended', 'abandoned', 'defended');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
--- =====================================================
--- STEP 2: DROP EXISTING TABLES (CLEAN START)
--- =====================================================
-
+-- Drop tables that depend on enums
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
 DROP TABLE IF EXISTS public.notifications CASCADE;
 DROP TABLE IF EXISTS public.documents CASCADE;
@@ -41,8 +23,27 @@ DROP TABLE IF EXISTS public.themes CASCADE;
 DROP TABLE IF EXISTS public.students CASCADE;
 DROP TABLE IF EXISTS public.users CASCADE;
 
+-- Drop old enum types
+DROP TYPE IF EXISTS supervision_status CASCADE;
+DROP TYPE IF EXISTS supervision_type CASCADE;
+DROP TYPE IF EXISTS session_status CASCADE;
+DROP TYPE IF EXISTS user_role CASCADE;
+
 -- =====================================================
--- STEP 3: CREATE TABLES
+-- STEP 2: CREATE NEW ENUM TYPES (WITH SUSPENDED)
+-- =====================================================
+
+CREATE TYPE user_role AS ENUM ('admin', 'supervisor', 'director');
+
+CREATE TYPE supervision_type AS ENUM ('pfe', 'master', 'doctorate', 'internship', 'spe', 'research');
+
+-- This enum now includes 'suspended' value
+CREATE TYPE supervision_status AS ENUM ('active', 'pending', 'completed', 'suspended', 'on_hold', 'abandoned', 'defended');
+
+CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled');
+
+-- =====================================================
+-- STEP 3: CREATE ALL TABLES
 -- =====================================================
 
 -- Users table
@@ -96,7 +97,7 @@ CREATE TABLE public.themes (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Supervisions table - WITH students AND supervisors arrays for flexibility
+-- Supervisions table - WITH students AND supervisors arrays for multiple entries
 CREATE TABLE public.supervisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
@@ -146,19 +147,19 @@ CREATE TABLE public.documents (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Notifications table (with comprehensive notification types and metadata)
+-- Notifications table
 CREATE TABLE public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
-    type TEXT DEFAULT 'info', -- info, success, warning, error, alert, supervision, document
+    type TEXT DEFAULT 'info',
     read BOOLEAN DEFAULT FALSE,
     link TEXT,
-    related_entity_type TEXT, -- supervisions, documents, sessions, users
+    related_entity_type TEXT,
     related_entity_id UUID,
     action_required BOOLEAN DEFAULT FALSE,
-    metadata JSONB DEFAULT '{}'::jsonb, -- Additional data like supervision_id, document_id, etc
+    metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -211,7 +212,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create user profile function (for auth signup)
+-- Create user profile function
 CREATE OR REPLACE FUNCTION public.create_user_profile(
     p_id UUID,
     p_email TEXT,
@@ -248,36 +249,29 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- STEP 6: CREATE TRIGGERS
 -- =====================================================
 
-DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_students_updated_at ON public.students;
 CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON public.students
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_supervisions_updated_at ON public.supervisions;
 CREATE TRIGGER update_supervisions_updated_at BEFORE UPDATE ON public.supervisions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_sessions_updated_at ON public.sessions;
 CREATE TRIGGER update_sessions_updated_at BEFORE UPDATE ON public.sessions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_documents_updated_at ON public.documents;
 CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON public.documents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_themes_updated_at ON public.themes;
 CREATE TRIGGER update_themes_updated_at BEFORE UPDATE ON public.themes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_notifications_updated_at ON public.notifications;
 CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON public.notifications
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- STEP 7: ENABLE ROW LEVEL SECURITY (RLS)
+-- STEP 7: ENABLE ROW LEVEL SECURITY
 -- =====================================================
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -307,7 +301,7 @@ END $$;
 -- STEP 9: CREATE NEW RLS POLICIES
 -- =====================================================
 
--- Users: Everyone can view, admins can update others, users can update themselves
+-- Users policies
 CREATE POLICY "users_select_all" ON public.users FOR SELECT USING (true);
 CREATE POLICY "users_insert_self" ON public.users FOR INSERT WITH CHECK (true);
 CREATE POLICY "users_update_self" ON public.users FOR UPDATE USING (auth.uid() = id);
@@ -315,7 +309,7 @@ CREATE POLICY "users_update_by_admin" ON public.users FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin' AND is_approved = true)
 );
 
--- Students: Approved users can read, supervisors/directors can manage
+-- Students policies
 CREATE POLICY "students_select_approved" ON public.students FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
@@ -323,27 +317,25 @@ CREATE POLICY "students_manage_approved" ON public.students FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
 
--- Themes: Approved users can read, supervisors/directors can manage
+-- Themes policies
 CREATE POLICY "themes_select_all" ON public.themes FOR SELECT USING (true);
 CREATE POLICY "themes_manage_approved" ON public.themes FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
 
--- Supervisions: Approved users can read, teachers/supervisors/directors/admins can manage
+-- Supervisions policies
 CREATE POLICY "supervisions_select_approved" ON public.supervisions FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
--- Teachers (supervisor role) can manage their own supervisions
 CREATE POLICY "supervisions_manage_teacher" ON public.supervisions FOR ALL USING (
     (teacher_id = auth.uid() OR co_advisor_id = auth.uid()) AND 
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('supervisor') AND is_approved = true)
 );
--- Directors and admins can manage all supervisions
 CREATE POLICY "supervisions_manage_director_admin" ON public.supervisions FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'director') AND is_approved = true)
 );
 
--- Sessions: Approved users can manage
+-- Sessions policies
 CREATE POLICY "sessions_select_approved" ON public.sessions FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
@@ -351,7 +343,7 @@ CREATE POLICY "sessions_manage_approved" ON public.sessions FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
 
--- Documents: Approved users can manage
+-- Documents policies
 CREATE POLICY "documents_select_approved" ON public.documents FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
@@ -359,12 +351,12 @@ CREATE POLICY "documents_manage_approved" ON public.documents FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_approved = true)
 );
 
--- Notifications: Users can read/update their own, insert for all
+-- Notifications policies
 CREATE POLICY "notifications_select_own" ON public.notifications FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "notifications_insert_all" ON public.notifications FOR INSERT WITH CHECK (true);
 
--- Audit logs: Admins can view, insert for all
+-- Audit logs policies
 CREATE POLICY "audit_logs_admin_select" ON public.audit_logs FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin' AND is_approved = true)
 );
@@ -382,27 +374,7 @@ GRANT EXECUTE ON FUNCTION public.create_user_profile TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_user_profile TO anon;
 
 -- =====================================================
--- STEP 11: CREATE STORAGE BUCKETS (COMMENTS ONLY - DO VIA SUPABASE UI)
--- =====================================================
-
--- NOTE: Create the following buckets in Supabase Storage UI:
--- 1. profile-photos
---    - Public: Yes
---    - Allowed file types: image/jpeg, image/png, image/gif, image/webp
---    - Max size: 5MB
---
--- 2. supervision-documents
---    - Public: No
---    - Allowed file types: All documents
---    - Max size: 50MB
---
--- 3. supervision-reviews
---    - Public: No
---    - Allowed file types: PDF, documents
---    - Max size: 100MB
-
--- =====================================================
--- STEP 12: HELPER FUNCTIONS FOR NOTIFICATIONS & PHOTOS
+-- STEP 11: NOTIFICATION & STATUS CHANGE FUNCTIONS
 -- =====================================================
 
 -- Function to create notification for supervision status change
@@ -455,7 +427,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger for supervision status notifications
-DROP TRIGGER IF EXISTS notify_supervision_status ON public.supervisions;
 CREATE TRIGGER notify_supervision_status AFTER UPDATE ON public.supervisions
     FOR EACH ROW EXECUTE FUNCTION public.notify_supervision_status_change();
 
@@ -515,83 +486,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger for document upload notifications
-DROP TRIGGER IF EXISTS notify_document_upload ON public.documents;
 CREATE TRIGGER notify_document_upload AFTER INSERT ON public.documents
     FOR EACH ROW EXECUTE FUNCTION public.notify_document_upload();
 
--- Function to notify when profile photo is updated (via database)
-CREATE OR REPLACE FUNCTION public.notify_profile_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.profile_picture_url != COALESCE(OLD.profile_picture_url, '') THEN
-        -- Create notification for admins if needed
-        INSERT INTO public.notifications (
-            user_id,
-            title,
-            message,
-            type,
-            related_entity_type,
-            related_entity_id,
-            metadata
-        )
-        SELECT 
-            id,
-            'User Profile Updated',
-            'User "' || NEW.full_name || '" updated their profile picture',
-            'info',
-            'users',
-            NEW.id,
-            jsonb_build_object('email', NEW.email, 'role', NEW.role)
-        FROM public.users
-        WHERE role = 'admin' AND is_approved = true AND id != NEW.id
-        LIMIT 10;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger for profile updates
-DROP TRIGGER IF EXISTS notify_profile_update ON public.users;
-CREATE TRIGGER notify_profile_update AFTER UPDATE ON public.users
-    FOR EACH ROW EXECUTE FUNCTION public.notify_profile_update();
-
 -- =====================================================
--- FINAL SETUP INSTRUCTIONS
+-- SETUP COMPLETE
 -- =====================================================
 
--- SUCCESS! Database is fully set up with photo uploads and notifications.
---
--- NEXT STEPS:
--- 1. Create Storage buckets in Supabase UI:
---    a. profile-photos (Public, images only, 5MB max)
---    b. supervision-documents (Private, all files, 50MB max)
---    c. supervision-reviews (Private, PDF/docs, 100MB max)
---
--- 2. Sign up a user in the application
---
--- 3. Go to Supabase SQL Editor > users table
---
--- 4. Set the new user's:
---    - is_approved = true
---    - role = 'admin' (for full access)
---
--- 5. Log back in and use:
---    - Profile upload for photos (uploads to profile-photos bucket)
---    - Create supervisions (auto-notifies supervisors)
---    - Upload documents (auto-notifies supervisors, creates notifications)
---    - Update supervision status (auto-notifies supervisors)
---
--- WHAT'S INCLUDED:
--- - 8 tables (users, students, supervisions, themes, sessions, documents, notifications, audit_logs)
--- - All supervision types (PFE, Master, Doctorate, Internship, SPE, Research)
--- - All supervision statuses (Active, Pending, Completed, Suspended, On Hold, Abandoned, Defended)
--- - Student and supervisor array support for flexible supervision assignments
--- - Photo upload support with Supabase Storage integration
--- - Comprehensive notification system with automatic triggers
--- - Notification types: info, success, warning, error, alert, supervision, document
--- - Auto-notifications on status changes, document uploads, profile updates
--- - RLS policies for security and privacy
--- - Auto-timestamp triggers for created_at and updated_at
--- - Comprehensive indexes for query performance
--- - Helper functions for user creation, notifications, and photos
--- - Complete audit logging for compliance
+-- Database is ready. All enum types including 'suspended' status are properly created.
+-- You can now use the supervision_status enum with all values: 
+-- 'active', 'pending', 'completed', 'suspended', 'on_hold', 'abandoned', 'defended'

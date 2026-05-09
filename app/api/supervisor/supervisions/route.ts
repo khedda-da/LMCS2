@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Get current user from auth header or session
     const authHeader = request.headers.get('authorization')
     let userId: string | null = null
 
@@ -29,7 +28,6 @@ export async function GET(request: NextRequest) {
       userId = user?.id || null
     }
 
-    // Fallback to cookie-based auth
     if (!userId) {
       const { data: { session } } = await supabase.auth.getSession()
       userId = session?.user?.id || null
@@ -42,8 +40,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch supervisions for the supervisor (as main supervisor OR co-supervisor)
-    // Filter out soft-deleted supervisions
     const { data: supervisions, error } = await supabase
       .from('supervisions')
       .select(`
@@ -74,13 +70,13 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('[v0] Error fetching supervisions:', error)
+      console.error('  Error fetching supervisions:', error)
       return NextResponse.json({ supervisions: [] })
     }
 
     return NextResponse.json({ supervisions: supervisions || [] })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ supervisions: [] })
   }
 }
@@ -111,7 +107,6 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Verify the supervisor exists, is approved, and not soft-deleted
     const { data: supervisorData, error: supervisorError } = await supabase
       .from('users')
       .select('id, role, is_approved, full_name')
@@ -126,7 +121,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify the student exists and is not soft-deleted
     const { data: studentData, error: studentError } = await supabase
       .from('students')
       .select('id')
@@ -141,7 +135,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Map supervision type to enum values
     const typeMap: Record<string, string> = {
       'license': 'pfe',
       'master': 'master',
@@ -149,7 +142,6 @@ export async function POST(request: NextRequest) {
       'internship': 'internship'
     }
 
-    // Create the supervision (using teacher_id as per schema)
     const { data: supervision, error: insertError } = await supabase
       .from('supervisions')
       .insert([
@@ -168,14 +160,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('[v0] Error creating supervision:', insertError)
+      console.error(' Error creating supervision:', insertError)
       return NextResponse.json(
         { error: insertError.message || 'Failed to create supervision' },
         { status: 500 }
       )
     }
 
-    // Log audit event
     const authHeader = request.headers.get('authorization')
     let currentUserId: string | null = null
     if (authHeader?.startsWith('Bearer ')) {
@@ -199,7 +190,6 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Notify all admins and directors (exclude soft-deleted)
       const { data: admins } = await supabase
         .from('users')
         .select('id')
@@ -220,7 +210,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ supervision, success: true })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error('  Unexpected error:', error)
     return NextResponse.json(
       { error: 'Failed to create supervision' },
       { status: 500 }

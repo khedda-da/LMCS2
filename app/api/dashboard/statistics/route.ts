@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    // Create admin client using service role key to bypass RLS
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -17,40 +16,34 @@ export async function GET() {
       }
     )
 
-    // Get total users count (exclude soft-deleted)
     const { count: totalUsers } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
       .is('deleted_at', null)
 
-    // Get active supervisions count (exclude soft-deleted)
     const { count: activeSuperVisions } = await supabase
       .from('supervisions')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active')
       .is('deleted_at', null)
 
-    // Get completed supervisions count (exclude soft-deleted)
     const { count: completedSupervisions } = await supabase
       .from('supervisions')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed')
       .is('deleted_at', null)
 
-    // Get students count (exclude soft-deleted)
     const { count: totalStudents } = await supabase
       .from('students')
       .select('*', { count: 'exact', head: true })
       .is('deleted_at', null)
 
-    // Get pending approvals count (exclude soft-deleted)
     const { count: pendingApprovals } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('is_approved', false)
       .is('deleted_at', null)
 
-    // Get supervision types distribution (exclude soft-deleted)
     const { data: supervisionTypes } = await supabase
       .from('supervisions')
       .select('type')
@@ -65,7 +58,6 @@ export async function GET() {
         return { data: Object.entries(grouped).map(([type, count]) => ({ type, count })) }
       })
 
-    // Get academic year distribution (exclude soft-deleted)
     const { data: academicYears } = await supabase
       .from('supervisions')
       .select('academic_year')
@@ -80,7 +72,6 @@ export async function GET() {
         return { data: Object.entries(grouped).map(([year, count]) => ({ year, count })) }
       })
 
-    // Get user roles distribution (exclude soft-deleted)
     const { data: userRoles } = await supabase
       .from('users')
       .select('role')
@@ -127,7 +118,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('[v0] Error fetching statistics:', error)
+    console.error(' Error fetching statistics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch statistics' },
       { status: 500 }

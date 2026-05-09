@@ -7,11 +7,10 @@ export async function GET(request: NextRequest) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      console.error('[v0] Auth error:', authError)
+      console.error('  Auth error:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify user is director or admin
     const { data: userData, error: roleError } = await supabase
       .from('users')
       .select('role')
@@ -19,12 +18,12 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (roleError) {
-      console.error('[v0] Role check error:', roleError)
+      console.error(' Role check error:', roleError)
       return NextResponse.json({ error: 'Failed to verify role' }, { status: 500 })
     }
 
     if (!userData || !['admin', 'director'].includes(userData.role)) {
-      console.warn('[v0] User does not have proper role:', userData?.role)
+      console.warn(' User does not have proper role:', userData?.role)
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate') || ''
     const endDate = searchParams.get('endDate') || ''
 
-    console.log('[v0] Filter params:', { status, type, supervisor, academicYear, yearOfStudy, startDate, endDate })
+    console.log(' Filter params:', { status, type, supervisor, academicYear, yearOfStudy, startDate, endDate })
 
     // Build query
     let query = supabase
@@ -56,16 +55,15 @@ export async function GET(request: NextRequest) {
         created_at
       `)
 
-    // Apply filters
-    // Handle status filter with proper enum values
+   
     if (status !== 'all') {
-      // Convert underscore to hyphen if needed (on_hold -> on-hold)
+    
       const statusValue = status.replace(/_/g, '-')
       query = query.eq('status', statusValue)
     }
 
     if (type !== 'all') {
-      // Handle special type mappings
+     
       const typeValue = type === 'pfe' ? 'pfe' : type
       query = query.eq('type', typeValue)
     }
@@ -89,16 +87,14 @@ export async function GET(request: NextRequest) {
     const { data: supervisions, error } = await query
 
     if (error) {
-      console.error('[v0] Error fetching advanced statistics:', error)
-      console.error('[v0] Query details - Status:', status, 'Type:', type, 'Supervisor:', supervisor)
+      console.error(' Error fetching advanced statistics:', error)
+      console.error(' Query details - Status:', status, 'Type:', type, 'Supervisor:', supervisor)
       return NextResponse.json({ error: 'Failed to fetch statistics', details: error }, { status: 500 })
     }
 
-    // Filter by year of study if needed
     let filteredSupervisions = supervisions || []
     
     if (yearOfStudy !== 'all') {
-      // Get students with the specified year of study
       const { data: studentsData } = await supabase
         .from('students')
         .select('id')
@@ -106,7 +102,6 @@ export async function GET(request: NextRequest) {
 
       const studentIds = (studentsData || []).map(s => s.id)
 
-      // Filter supervisions that have students with this year of study
       filteredSupervisions = filteredSupervisions.filter((s: any) => {
         if (!s.students || !Array.isArray(s.students)) return false
         return s.students.some((sid: string) => studentIds.includes(sid))
@@ -169,10 +164,10 @@ export async function GET(request: NextRequest) {
       },
     }
     
-    console.log('[v0] API response:', { statsTotal: stats.total, supervisionCount: filteredSupervisions.length })
+    console.log(' API response:', { statsTotal: stats.total, supervisionCount: filteredSupervisions.length })
     return NextResponse.json(response)
   } catch (error) {
-    console.error('[v0] Error in advanced statistics API:', error)
+    console.error(' Error in advanced statistics API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

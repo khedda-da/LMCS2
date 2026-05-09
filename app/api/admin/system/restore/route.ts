@@ -16,7 +16,7 @@ interface BackupData {
     sessions?: any[]
     themes?: any[]
   }
-  // Legacy format support (v1.x)
+  
   users?: any[]
   students?: any[]
   supervisions?: any[]
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  // Create service role client for restoring data (bypasses RLS)
+  
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
   }
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const fileContent = await file.text()
     const backupFile: BackupData = JSON.parse(fileContent)
 
-    // Support both old (v1.x) and new (v2.x) backup formats
+    
     const restoreData = backupFile.data || backupFile
 
     // Validate data structure
@@ -88,10 +88,7 @@ export async function POST(request: NextRequest) {
       themes: { restored: 0, errors: [] as string[] },
     }
 
-    // =====================================================
-    // STEP 1: Clear existing data (except users - we upsert those)
-    // Order matters due to foreign key constraints!
-    // =====================================================
+   
     
     // Clear in reverse dependency order
     try {
@@ -101,9 +98,9 @@ export async function POST(request: NextRequest) {
       await serviceSupabase.from('supervisions').delete().gte('created_at', '1900-01-01')
       await serviceSupabase.from('students').delete().gte('created_at', '1900-01-01')
       await serviceSupabase.from('themes').delete().gte('created_at', '1900-01-01')
-      console.log('[v0] Cleared existing data for restore')
+      console.log('  Cleared existing data for restore')
     } catch (clearError) {
-      console.warn('[v0] Warning during data clearing:', clearError)
+      console.warn('  Warning during data clearing:', clearError)
     }
 
     // =====================================================
@@ -246,7 +243,7 @@ export async function POST(request: NextRequest) {
               program: student.program || null,
               level: student.level || null,
               academic_year: student.academic_year || null,
-              deleted_at: student.deleted_at || null, // Preserve deleted_at status
+              deleted_at: student.deleted_at || null, 
               created_at: student.created_at || new Date().toISOString(),
               updated_at: student.updated_at || new Date().toISOString(),
             })
@@ -291,7 +288,7 @@ export async function POST(request: NextRequest) {
               objectives: supervision.objectives || null,
               students: supervision.students || [],
               supervisors: supervision.supervisors || [],
-              deleted_at: supervision.deleted_at || null, // Preserve deleted_at status
+              deleted_at: supervision.deleted_at || null, 
               created_at: supervision.created_at || new Date().toISOString(),
               updated_at: supervision.updated_at || new Date().toISOString(),
             })
@@ -443,7 +440,7 @@ export async function POST(request: NextRequest) {
         details: `Database restored from backup. ${totalRestored} records restored, ${totalErrors} errors.`,
       })
     } catch (logErr) {
-      console.error('[v0] Error logging restore action:', logErr)
+      console.error('  Error logging restore action:', logErr)
     }
 
     // Collect all errors for response
@@ -475,7 +472,7 @@ export async function POST(request: NextRequest) {
       info: `Restored ${results.users.restored} users, ${results.students.restored} students, ${results.supervisions.restored} supervisions, ${results.documents.restored} documents, ${results.notifications.restored} notifications. Soft-deleted records are preserved with their deleted_at timestamps.`,
     })
   } catch (error) {
-    console.error('[v0] Restore error:', error)
+    console.error('  Restore error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to restore database' },
       { status: 500 }

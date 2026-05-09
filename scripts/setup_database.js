@@ -7,7 +7,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const dbUrl = process.env.POSTGRES_URL;
 
 if (!dbUrl) {
-  console.error('[v0] ERROR: POSTGRES_URL environment variable not set');
+  console.error('  ERROR: POSTGRES_URL environment variable not set');
   process.exit(1);
 }
 
@@ -21,15 +21,15 @@ const client = new Client({
 async function setupDatabase() {
   try {
     await client.connect();
-    console.log('[v0] Connected to database');
+    console.log('  Connected to database');
 
     // Enable extensions
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
     await client.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
-    console.log('[v0] Extensions enabled');
+    console.log('  Extensions enabled');
 
     // Note: Using VARCHAR instead of ENUM for better compatibility
-    console.log('[v0] Using VARCHAR types for role/status columns');
+    console.log('  Using VARCHAR types for role/status columns');
 
     // Create tables
     const tables = [
@@ -114,7 +114,7 @@ async function setupDatabase() {
     for (const tableQuery of tables) {
       await client.query(tableQuery);
     }
-    console.log('[v0] All tables created successfully');
+    console.log('  All tables created successfully');
 
     // Drop old policies
     const dropPolicies = [
@@ -135,7 +135,7 @@ async function setupDatabase() {
         // Policy may not exist, that's okay
       }
     }
-    console.log('[v0] Old policies dropped');
+    console.log('  Old policies dropped');
 
     // Enable RLS
     await client.query('ALTER TABLE users ENABLE ROW LEVEL SECURITY;');
@@ -144,7 +144,7 @@ async function setupDatabase() {
     await client.query('ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;');
     await client.query('ALTER TABLE documents ENABLE ROW LEVEL SECURITY;');
     await client.query('ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;');
-    console.log('[v0] RLS enabled on all tables');
+    console.log('  RLS enabled on all tables');
 
     // Create simple non-recursive policies
     const policies = [
@@ -161,16 +161,16 @@ async function setupDatabase() {
         await client.query(policyQuery);
       } catch (e) {
         if (!e.message.includes('already exists')) {
-          console.log(`[v0] Note: ${e.message.split('\n')[0]}`);
+          console.log(`  Note: ${e.message.split('\n')[0]}`);
         }
       }
     }
-    console.log('[v0] RLS policies created successfully');
+    console.log('  RLS policies created successfully');
 
-    console.log('[v0] Database setup completed successfully!');
+    console.log('  Database setup completed successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('[v0] ERROR:', error.message);
+    console.error('  ERROR:', error.message);
     process.exit(1);
   } finally {
     await client.end();

@@ -88,7 +88,7 @@ export default function SupervisorDashboard() {
     completed: t.completed,
     suspended: t.suspended,
     pending: language === 'fr' ? 'En attente' : 'Pending',
-    'on-hold': language === 'fr' ? 'En pause' : 'On Hold',
+    on_hold: language === 'fr' ? 'En pause' : 'On Hold',
     defended: language === 'fr' ? 'Soutenu' : 'Defended',
     abandoned: language === 'fr' ? 'Abandonne' : 'Abandoned',
   }
@@ -98,9 +98,10 @@ export default function SupervisorDashboard() {
     completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
     defended: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
     suspended: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
-    abandoned: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
     pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
-    'on-hold': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
+    on_hold: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100',
+    abandoned: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
+    defended: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
   }
 
   useEffect(() => {
@@ -201,21 +202,29 @@ export default function SupervisorDashboard() {
   const handleUpdateStatus = async (supervisionId: string, newStatus: string) => {
     try {
       setError(null)
+      console.log('Updating supervision status:', { supervisionId, newStatus })
       
-      const endDate = newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
-      const { error } = await supabase
-        .from('supervisions')
-        .update({ 
+      // Use API endpoint to update status
+      const response = await fetch('/api/supervisions/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supervisionId,
           status: newStatus,
-          end_date: endDate,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', supervisionId)
+        }),
+      })
 
-      if (error) {
-        throw error
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update status')
       }
 
+      console.log('Status updated successfully:', data)
+
+      const endDate = newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
       const updated = supervisions.map(s => 
         s.id === supervisionId 
           ? { ...s, status: newStatus, end_date: endDate }
@@ -240,7 +249,7 @@ export default function SupervisorDashboard() {
         : `Status updated to: ${statusLabel}`
       alert(message)
     } catch (err) {
-      console.error('[v0] Error updating status:', err)
+      console.error('Error updating status:', err)
       const errorMsg = err instanceof Error ? err.message : 'Failed to update status'
       setError(errorMsg)
       alert('Error: ' + errorMsg)
@@ -412,8 +421,8 @@ export default function SupervisorDashboard() {
                                   <SelectItem value="active">{t.active}</SelectItem>
                                   <SelectItem value="completed">{t.completed}</SelectItem>
                                   <SelectItem value="defended">{statusLabels.defended}</SelectItem>
-                                  <SelectItem value="on-hold">{statusLabels['on-hold']}</SelectItem>
-                                  <SelectItem value="suspended">{t.suspended}</SelectItem>
+                                  <SelectItem value="on_hold">{statusLabels.on_hold}</SelectItem>
+                                  <SelectItem value="suspended">{statusLabels.suspended}</SelectItem>
                                   <SelectItem value="abandoned">{statusLabels.abandoned}</SelectItem>
                                 </SelectContent>
                               </Select>

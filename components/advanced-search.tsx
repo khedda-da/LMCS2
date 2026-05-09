@@ -78,6 +78,8 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
       completed: { en: 'Completed', fr: 'Termine' },
       onHold: { en: 'On Hold', fr: 'En pause' },
       suspended: { en: 'Suspended', fr: 'Suspendu' },
+      defended: { en: 'Defended', fr: 'Soutenu' },
+      abandoned: { en: 'Abandoned', fr: 'Abandonne' },
       allTypes: { en: 'All Types', fr: 'Tous les Types' },
       pfe: { en: 'PFE Engineer', fr: 'PFE Ingenieur' },
       master: { en: 'Master Thesis', fr: 'Memoire de Master' },
@@ -147,10 +149,6 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
     filters.sortBy !== 'newest' ||
     filters.academicYear !== 'all'
 
-  const activeSearchCriteria = Object.entries(filters.searchIn)
-    .filter(([_, v]) => v)
-    .map(([k]) => t(k))
-
   return (
     <Card className="p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
       <div className="space-y-4">
@@ -204,7 +202,7 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
                 </span>
                 {showSearchCriteria ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </Button>
-              
+
               {showSearchCriteria && (
                 <div className="mt-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900">
                   <p className="text-sm font-medium text-muted-foreground mb-3">{t('searchIn')}</p>
@@ -216,7 +214,7 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
                           checked={checked}
                           onCheckedChange={(val) => handleSearchInChange(key as keyof FilterOptions['searchIn'], !!val)}
                         />
-                        <Label 
+                        <Label
                           htmlFor={`search-${key}`}
                           className="text-sm cursor-pointer"
                         >
@@ -245,8 +243,10 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
                     <SelectItem value="active">{t('active')}</SelectItem>
                     <SelectItem value="pending">{t('pending')}</SelectItem>
                     <SelectItem value="completed">{t('completed')}</SelectItem>
-                    <SelectItem value="on-hold">{t('onHold')}</SelectItem>
+                    <SelectItem value="on_hold">{t('onHold')}</SelectItem>
                     <SelectItem value="suspended">{t('suspended')}</SelectItem>
+                    <SelectItem value="defended">{t('defended')}</SelectItem>
+                    <SelectItem value="abandoned">{t('abandoned')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -324,7 +324,7 @@ export function AdvancedSupervisionSearch({ onFilter, loading, academicYears = [
             )}
             {filters.status !== 'all' && (
               <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-3 py-1.5 rounded-full">
-                {t('status')}: {t(filters.status)}
+                {t('status')}: {t(filters.status === 'on_hold' ? 'onHold' : filters.status)}
                 <X
                   className="w-3 h-3 cursor-pointer hover:opacity-70 ml-1"
                   onClick={() => handleFilterChange('status', 'all')}

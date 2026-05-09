@@ -72,7 +72,7 @@ export default function ProfileSettingsPage() {
       setProfile(profileData)
       setFormData(profileData)
     } catch (error) {
-      console.error('[v0] Error loading profile:', error)
+      console.error('Error loading profile:', error)
       toast.error('Error loading profile')
     } finally {
       setLoading(false)
@@ -89,7 +89,7 @@ export default function ProfileSettingsPage() {
 
     try {
       setSaving(true)
-      console.log('[v0] Saving profile with data:', formData)
+      console.log('Saving profile with data:', formData)
 
       const updateData: any = {
         first_name: formData.first_name || '',
@@ -106,7 +106,7 @@ export default function ProfileSettingsPage() {
         updateData.full_name = `${formData.first_name || ''} ${formData.last_name || ''}`.trim()
       }
 
-      console.log('[v0] Sending update payload:', updateData)
+      console.log('Sending update payload:', updateData)
 
       const { data, error } = await supabase
         .from('users')
@@ -115,17 +115,17 @@ export default function ProfileSettingsPage() {
         .select()
 
       if (error) {
-        console.error('[v0] Update error:', error)
+        console.error('Update error:', error)
         throw error
       }
 
-      console.log('[v0] Update successful, response:', data)
+      console.log('Update successful, response:', data)
 
       setProfile(prev => prev ? { ...prev, ...updateData } : null)
       setFormData(prev => ({ ...prev, ...updateData }))
       toast.success('Profile updated successfully')
     } catch (error) {
-      console.error('[v0] Error saving profile:', error)
+      console.error('Error saving profile:', error)
       toast.error('Failed to save profile changes')
     } finally {
       setSaving(false)
@@ -184,7 +184,7 @@ export default function ProfileSettingsPage() {
       toast.success('Password changed successfully')
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
-      console.error('[v0] Error changing password:', error)
+      console.error('Error changing password:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to change password')
     } finally {
       setUpdatingPassword(false)

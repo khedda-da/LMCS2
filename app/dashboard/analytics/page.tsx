@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
     pending: t('pending'),
     suspended: t('suspended'),
     defended: t('defended'),
-    'on-hold': t('onHold'),
+    on_hold: t('onHold'),
     abandoned: t('abandoned'),
   }
 

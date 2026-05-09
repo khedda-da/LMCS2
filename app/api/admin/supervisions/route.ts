@@ -20,8 +20,7 @@ export async function GET() {
       }
     )
 
-    // Fetch supervisions with related data
-    // Filter out soft-deleted supervisions (deleted_at is null)
+    
     const { data: supervisions, error } = await supabase
       .from('supervisions')
       .select(`
@@ -45,7 +44,7 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('[v0] Error fetching supervisions:', error)
+      console.error('  Error fetching supervisions:', error)
       return NextResponse.json({ error: error.message, supervisions: [] }, { status: 200 })
     }
 
@@ -108,7 +107,7 @@ export async function GET() {
 
     return NextResponse.json({ supervisions: enrichedSupervisions || [] })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to fetch supervisions', supervisions: [] }, { status: 200 })
   }
 }
@@ -155,7 +154,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[v0] Error creating supervision:', error)
+      console.error('  Error creating supervision:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -224,7 +223,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ supervision, message: 'Supervision created successfully' })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error('  Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to create supervision' }, { status: 500 })
   }
 }
@@ -271,7 +270,7 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[v0] Error updating supervision:', error)
+      console.error('  Error updating supervision:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -309,7 +308,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ supervision, message: 'Supervision updated successfully' })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error('  Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to update supervision' }, { status: 500 })
   }
 }

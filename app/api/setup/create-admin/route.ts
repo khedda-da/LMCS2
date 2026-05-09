@@ -5,7 +5,6 @@ export async function POST(request: Request) {
   try {
     const { full_name, email, password, setupKey } = await request.json()
 
-    // Validate setup key
     const SETUP_KEY = process.env.SETUP_KEY || 'LMCS-INIT-2026'
     
     if (setupKey !== SETUP_KEY) {
@@ -15,7 +14,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate required fields
     if (!full_name || !email || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -23,7 +21,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate password strength
     if (password.length < 8) {
       return NextResponse.json(
         { error: 'Password must be at least 8 characters' },
@@ -31,7 +28,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create Supabase admin client
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -43,7 +39,6 @@ export async function POST(request: Request) {
       }
     )
 
-    // Check if any admin or director already exists
     const { data: existingAdmins, error: checkError } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -65,7 +60,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if email is already used
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -79,7 +73,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -105,7 +98,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create user record in users table
     const { error: insertError } = await supabaseAdmin
       .from('users')
       .insert({
@@ -119,7 +111,6 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error('Insert error:', insertError)
-      // Try to clean up auth user if database insert fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
         { error: 'Failed to create user profile' },

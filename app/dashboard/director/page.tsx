@@ -176,7 +176,7 @@ export default function DirectorDashboard() {
         const suspended = allSupervisions.filter(s => s.status === 'suspended').length
         const pending = allSupervisions.filter(s => s.status === 'pending').length
         const defended = allSupervisions.filter(s => s.status === 'defended').length
-        const onHold = allSupervisions.filter(s => s.status === 'on-hold').length
+        const onHold = allSupervisions.filter(s => s.status === 'on_hold').length
         const abandoned = allSupervisions.filter(s => s.status === 'abandoned').length
 
         const byType: Record<string, number> = {}
@@ -285,7 +285,7 @@ export default function DirectorDashboard() {
       const suspended = filtered.filter(s => s.status === 'suspended').length
       const pending = filtered.filter(s => s.status === 'pending').length
       const defended = filtered.filter(s => s.status === 'defended').length
-      const onHold = filtered.filter(s => s.status === 'on-hold').length
+      const onHold = filtered.filter(s => s.status === 'on_hold').length
       const abandoned = filtered.filter(s => s.status === 'abandoned').length
       
       const byType: Record<string, number> = {}
@@ -326,7 +326,7 @@ export default function DirectorDashboard() {
       setSupervisors(updatedSupervisors)
       setAdvancedFilters(filters)
     } catch (err) {
-      console.error('[v0] Error applying advanced filters:', err)
+      console.error('Error applying advanced filters:', err)
       setError(err instanceof Error ? err.message : 'Failed to apply filters')
     }
   }

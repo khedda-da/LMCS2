@@ -132,7 +132,7 @@ export default function ProfilePage() {
         setProfilePhotoPreview(profileData.profile_picture_url)
       }
     } catch (error) {
-      console.error('[v0] Error loading profile:', error)
+      console.error('Error loading profile:', error)
       toast.error('Error loading profile')
     } finally {
       setLoading(false)
@@ -188,7 +188,7 @@ export default function ProfilePage() {
       setProfile(prev => prev ? { ...prev, profile_picture_url: photoUrl } : null)
       toast.success('Profile photo updated successfully')
     } catch (error) {
-      console.error('[v0] Error uploading photo:', error)
+      console.error('Error uploading photo:', error)
       toast.error('Failed to upload photo')
       setProfilePhotoPreview(profile?.profile_picture_url || '')
     } finally {
@@ -454,7 +454,7 @@ function RoleCard({ role, userId }: { role: string; userId: string }) {
       const data = await response.json()
       setRoleStats(data)
     } catch (error) {
-      console.error('[v0] Error loading role statistics:', error)
+      console.error('Error loading role statistics:', error)
     } finally {
       setLoading(false)
     }
@@ -516,7 +516,7 @@ function ProfileStatistics({ userId, role }: { userId: string; role: string }) {
       const data = await response.json()
       setStats(data)
     } catch (error) {
-      console.error('[v0] Error loading statistics:', error)
+      console.error('Error loading statistics:', error)
     } finally {
       setLoading(false)
     }

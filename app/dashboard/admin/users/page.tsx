@@ -159,7 +159,7 @@ export default function UsersPage() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete user'
       setError(errorMsg)
       toast.error(errorMsg)
-      console.error('[v0] Delete user error:', err)
+      console.error('Delete user error:', err)
     } finally {
       setDeleting(null)
     }

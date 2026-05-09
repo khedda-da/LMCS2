@@ -47,14 +47,14 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
 
     if (deleteError) {
-      console.error('[v0] Error deleting user:', deleteError)
+      console.error(' Error deleting user:', deleteError)
       return NextResponse.json(
         { error: deleteError.message || 'Failed to reject user' },
         { status: 500 }
       )
     }
 
-    console.log('[v0] User rejected and deleted:', userId)
+    console.log(' User rejected and deleted:', userId)
 
     // Get current admin user and log the action
     const { data: { user: adminUser } } = await supabase.auth.getUser()
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       message: 'User rejected and removed',
     })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

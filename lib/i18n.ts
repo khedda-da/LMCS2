@@ -98,6 +98,7 @@ export const translations = {
     view: 'View',
     noSupervisions: 'No supervisions yet',
     createFirstSupervision: 'Create Your First Supervision',
+    suspended: 'Suspended',
     
     // Supervision form
     createNewSupervision: 'Create New Supervision',
@@ -252,6 +253,7 @@ export const translations = {
     view: 'Voir',
     noSupervisions: 'Pas encore d\'encadrements',
     createFirstSupervision: 'Créer Votre Premier Encadrement',
+    suspended: 'Suspendu',
     
     // Supervision form
     createNewSupervision: 'Créer un Nouvel Encadrement',

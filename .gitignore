@@ -1,7 +1,7 @@
-# v0 runtime files
-__v0_runtime_loader.js
-__v0_devtools.tsx
-__v0_jsx-dev-runtime.ts
+#  runtime files
+___runtime_loader.js 
+___devtools.tsx
+___jsx-dev-runtime.ts
 
 # Common ignores
 node_modules

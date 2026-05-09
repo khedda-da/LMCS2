@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (checkError && checkError.code !== 'PGRST116') {
-      console.error('[v0] Error checking existing user:', checkError)
+      console.error(' Error checking existing user:', checkError)
       return NextResponse.json(
         { error: 'Failed to check existing user' },
         { status: 500 }
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
           last_name: last_name || full_name.split(' ').slice(1).join(' ') || '',
           role: 'student',
           requested_role: 'student',
-          is_approved: true, // Admin-created students are pre-approved
+          is_approved: true, 
           is_active: true,
         },
       ])
 
     if (userError) {
-      console.error('[v0] Error creating user:', userError)
+      console.error(' Error creating user:', userError)
       return NextResponse.json(
         { error: userError.message || 'Failed to create user' },
         { status: 500 }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       ])
 
     if (studentError) {
-      console.error('[v0] Error creating student record:', studentError)
+      console.error(' Error creating student record:', studentError)
       // Try to clean up the user if student creation fails
       await supabase.from('users').delete().eq('id', userId)
       
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Student created successfully:', email)
+    console.log(' Student created successfully:', email)
 
     return NextResponse.json({
       success: true,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

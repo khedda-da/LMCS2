@@ -43,7 +43,7 @@ export async function GET() {
       stats[table] = count || 0
     }
 
-    // Get database size
+    
     const { data: sizeData } = await supabase.rpc('get_database_size')
 
     return NextResponse.json({

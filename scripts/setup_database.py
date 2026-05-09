@@ -13,12 +13,12 @@ try:
     # Connect to database
     conn = psycopg2.connect(db_url)
     cursor = conn.cursor()
-    print("[v0] Connected to database")
+    print("  Connected to database")
     
     # Enable extensions
     cursor.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
     cursor.execute('CREATE EXTENSION IF NOT EXISTS "pgcrypto";')
-    print("[v0] Extensions enabled")
+    print("  Extensions enabled")
     
     # Create ENUM types (ignore if already exist)
     try:
@@ -41,7 +41,7 @@ try:
     except:
         pass
     
-    print("[v0] Enum types created/verified")
+    print("  Enum types created/verified")
     
     # Create users table
     cursor.execute("""
@@ -138,7 +138,7 @@ try:
         );
     """)
     
-    print("[v0] All tables created successfully")
+    print("  All tables created successfully")
     
     # Drop and recreate RLS policies to fix infinite recursion
     cursor.execute("DROP POLICY IF EXISTS \"users_select_policy\" ON users;")
@@ -155,7 +155,7 @@ try:
     cursor.execute("ALTER TABLE documents ENABLE ROW LEVEL SECURITY;")
     cursor.execute("ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;")
     
-    print("[v0] RLS enabled on all tables")
+    print("  RLS enabled on all tables")
     
     # Create simple, non-recursive RLS policies
     cursor.execute("""
@@ -183,17 +183,17 @@ try:
         FOR SELECT USING (TRUE);
     """)
     
-    print("[v0] RLS policies created successfully")
+    print("  RLS policies created successfully")
     
     # Commit changes
     conn.commit()
     cursor.close()
     conn.close()
     
-    print("[v0] Database setup completed successfully!")
+    print("  Database setup completed successfully!")
     
 except Exception as e:
-    print(f"[v0] ERROR: {str(e)}")
+    print(f"  ERROR: {str(e)}")
     if conn:
         conn.rollback()
     exit(1)

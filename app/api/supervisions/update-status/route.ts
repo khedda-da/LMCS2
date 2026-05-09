@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAuditEvent } from '@/lib/audit-logger'
 import { createNotificationsForUsers, createNotification } from '@/lib/real-notifications'
 
-export async function PATCH(request: NextRequest) {
+async function handleStatusUpdate(request: NextRequest) {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
@@ -42,7 +42,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get original supervision for comparison
     const { data: originalSupervision, error: fetchError } = await supabase
       .from('supervisions')
       .select('*, student:students(full_name)')
@@ -55,17 +54,20 @@ export async function PATCH(request: NextRequest) {
 
     const oldStatus = originalSupervision.status
 
-    // Update supervision status
+    
     const { error: updateError } = await supabase
       .from('supervisions')
       .update({ 
-        status,
+        status: status as any,
         updated_at: new Date().toISOString()
       })
       .eq('id', supervisionId)
 
     if (updateError) {
-      console.error('[v0] Error updating supervision status:', updateError)
+      console.error('  Error updating supervision status:', updateError)
+      console.error('  Status value being sent:', status)
+      console.error('  Supervision ID:', supervisionId)
+      console.error('  Full error object:', JSON.stringify(updateError))
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
@@ -83,12 +85,10 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    // Notify relevant users about status change
     const notifyUsers: string[] = []
     if (originalSupervision.teacher_id) notifyUsers.push(originalSupervision.teacher_id)
     if (originalSupervision.co_advisor_id) notifyUsers.push(originalSupervision.co_advisor_id)
     
-    // Remove the current user from notification list (they made the change)
     const filteredNotifyUsers = notifyUsers.filter(id => id !== user.id)
 
     const statusLabels: Record<string, string> = {
@@ -113,7 +113,6 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Also notify all admins and directors
     const { data: adminUsers } = await supabase
       .from('users')
       .select('id')
@@ -141,7 +140,15 @@ export async function PATCH(request: NextRequest) {
       newStatus: status
     })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to update supervision status' }, { status: 500 })
   }
+}
+
+export async function POST(request: NextRequest) {
+  return handleStatusUpdate(request)
+}
+
+export async function PATCH(request: NextRequest) {
+  return handleStatusUpdate(request)
 }

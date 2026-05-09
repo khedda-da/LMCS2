@@ -63,13 +63,13 @@ export default function SystemManagementPage() {
       const response = await fetch('/api/admin/system/logs?limit=50')
       const data = await response.json()
       if (response.ok) {
-        console.log('[v0] Logs fetched:', data.logs)
+        console.log('Logs fetched:', data.logs)
         setLogs(data.logs || [])
       } else {
-        console.error('[v0] Logs fetch error:', data)
+        console.error('Logs fetch error:', data)
       }
     } catch (err: any) {
-      console.error('[v0] Failed to fetch logs:', err)
+      console.error('Failed to fetch logs:', err)
     } finally {
       setLoading(false)
     }
@@ -141,7 +141,7 @@ export default function SystemManagementPage() {
 
     try {
       setRestoring(true)
-      console.log('[v0] Starting database restore with file:', file.name)
+      console.log('Starting database restore with file:', file.name)
       
       const formData = new FormData()
       formData.append('file', file)
@@ -152,7 +152,7 @@ export default function SystemManagementPage() {
       })
 
       const data = await response.json()
-      console.log('[v0] Restore response:', data)
+      console.log('Restore response:', data)
 
       if (response.ok) {
         toast.success(`Database restored: ${data.restoredCount} records recovered`)
@@ -160,7 +160,7 @@ export default function SystemManagementPage() {
         
         if (data.errors && data.errors.length > 0) {
           toast.warning(`${data.errors.length} errors occurred during restore`)
-          console.error('[v0] Restore errors:', data.errors)
+          console.error('Restore errors:', data.errors)
         }
         
         // Force page reload to ensure all cached data is cleared and new data is fetched
@@ -170,12 +170,12 @@ export default function SystemManagementPage() {
       } else {
         setError(data.error)
         toast.error(data.error)
-        console.error('[v0] Restore failed:', data.error)
+        console.error('Restore failed:', data.error)
       }
     } catch (err: any) {
       setError(err.message)
       toast.error(err.message)
-      console.error('[v0] Restore error:', err)
+      console.error('Restore error:', err)
     } finally {
       setRestoring(false)
       if (fileInputRef.current) {

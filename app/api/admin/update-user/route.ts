@@ -9,8 +9,6 @@ export async function POST(request: NextRequest) {
     if (!userId || !updates) {
       return NextResponse.json({ error: 'User ID and updates are required' }, { status: 400 })
     }
-
-    // Validate environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
@@ -53,13 +51,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[v0] Error updating user:', error)
+      console.error('  Error updating user:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ user: data, success: true })
   } catch (error) {
-    console.error('[v0] Unexpected error:', error)
+    console.error(' Unexpected error:', error)
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
   }
 }

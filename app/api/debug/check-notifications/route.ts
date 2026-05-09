@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       message: 'Debug info retrieved successfully'
     })
   } catch (error) {
-    console.error('[v0] Debug error:', error)
+    console.error(' Debug error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

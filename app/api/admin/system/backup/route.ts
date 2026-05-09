@@ -89,7 +89,7 @@ export async function POST() {
     }
 
     // =====================================================
-    // BACKUP ALL USERS (including soft-deleted)
+    // BACKUP ALL USERS 
     // =====================================================
     const { data: usersData, error: usersError } = await serviceSupabase
       .from('users')
@@ -97,7 +97,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (usersError) {
-      console.error('[v0] Error fetching users for backup:', usersError)
+      console.error('  Error fetching users for backup:', usersError)
     } else {
       backup.data.users = usersData || []
       backup.counts.users.total = usersData?.length || 0
@@ -106,7 +106,7 @@ export async function POST() {
     }
 
     // =====================================================
-    // BACKUP ALL STUDENTS (including soft-deleted)
+    // BACKUP ALL STUDENTS 
     // =====================================================
     const { data: studentsData, error: studentsError } = await serviceSupabase
       .from('students')
@@ -114,7 +114,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (studentsError) {
-      console.error('[v0] Error fetching students for backup:', studentsError)
+      console.error('  Error fetching students for backup:', studentsError)
     } else {
       backup.data.students = studentsData || []
       backup.counts.students.total = studentsData?.length || 0
@@ -123,7 +123,7 @@ export async function POST() {
     }
 
     // =====================================================
-    // BACKUP ALL SUPERVISIONS (including soft-deleted)
+    // BACKUP ALL SUPERVISIONS 
     // =====================================================
     const { data: supervisionsData, error: supervisionsError } = await serviceSupabase
       .from('supervisions')
@@ -131,7 +131,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (supervisionsError) {
-      console.error('[v0] Error fetching supervisions for backup:', supervisionsError)
+      console.error('  Error fetching supervisions for backup:', supervisionsError)
     } else {
       backup.data.supervisions = supervisionsData || []
       backup.counts.supervisions.total = supervisionsData?.length || 0
@@ -148,7 +148,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (documentsError) {
-      console.error('[v0] Error fetching documents for backup:', documentsError)
+      console.error('  Error fetching documents for backup:', documentsError)
     } else {
       backup.data.documents = documentsData || []
       backup.counts.documents = documentsData?.length || 0
@@ -163,7 +163,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (notificationsError) {
-      console.error('[v0] Error fetching notifications for backup:', notificationsError)
+      console.error(' Error fetching notifications for backup:', notificationsError)
     } else {
       backup.data.notifications = notificationsData || []
       backup.counts.notifications = notificationsData?.length || 0
@@ -178,7 +178,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (sessionsError) {
-      console.error('[v0] Error fetching sessions for backup:', sessionsError)
+      console.error(' Error fetching sessions for backup:', sessionsError)
     } else {
       backup.data.sessions = sessionsData || []
       backup.counts.sessions = sessionsData?.length || 0
@@ -193,7 +193,7 @@ export async function POST() {
       .order('created_at', { ascending: true })
 
     if (themesError) {
-      console.error('[v0] Error fetching themes for backup:', themesError)
+      console.error(' Error fetching themes for backup:', themesError)
     } else {
       backup.data.themes = themesData || []
       backup.counts.themes = themesData?.length || 0
@@ -209,7 +209,7 @@ export async function POST() {
       .limit(1000)
 
     if (auditLogsError) {
-      console.error('[v0] Error fetching audit logs for backup:', auditLogsError)
+      console.error(' Error fetching audit logs for backup:', auditLogsError)
     } else {
       backup.data.audit_logs = auditLogsData || []
       backup.counts.audit_logs = auditLogsData?.length || 0
@@ -245,7 +245,7 @@ export async function POST() {
       info: 'This backup includes ALL records including soft-deleted ones. Soft-deleted records will be restored with their deleted_at timestamp preserved, allowing you to recover them if needed.'
     })
   } catch (error: any) {
-    console.error('[v0] Backup error:', error)
+    console.error(' Backup error:', error)
     return NextResponse.json(
       { error: 'Failed to create backup', details: error.message },
       { status: 500 }

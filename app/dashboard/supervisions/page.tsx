@@ -121,7 +121,7 @@ export default function SupervisionsPage() {
       }
 
     } catch (error) {
-      console.error('[v0] Error fetching supervisions:', error)
+      console.error(' Error fetching supervisions:', error)
       toast.error(t('loadFailed'))
     } finally {
       setLoading(false)
@@ -153,7 +153,7 @@ export default function SupervisionsPage() {
       setNewStatus('')
       toast.success(language === 'fr' ? 'Statut mis à jour!' : 'Status updated successfully!')
     } catch (error: any) {
-      console.error('[v0] Error updating status:', error)
+      console.error('Error updating status:', error)
       toast.error(error.message || (language === 'fr' ? 'Erreur de mise à jour' : 'Failed to update status'))
     } finally {
       setUpdatingStatus(false)
@@ -256,7 +256,7 @@ export default function SupervisionsPage() {
       setSupervisions(supervisions.filter(s => s.id !== id))
       toast.success(t('deleted'))
     } catch (error) {
-      console.error('[v0] Error deleting supervision:', error)
+      console.error('Error deleting supervision:', error)
       toast.error(t('deleteFailed'))
     }
   }

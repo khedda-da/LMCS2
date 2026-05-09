@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current supervision
     const { data: supervision, error: fetchError } = await supabase
       .from('supervisions')
       .select('supervisors')
@@ -31,11 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Supervision not found' }, { status: 404 })
     }
 
-    // Merge existing and new supervisors
     const existingSupervisors = supervision?.supervisors || []
     const updatedSupervisors = Array.from(new Set([...existingSupervisors, ...supervisorIds]))
 
-    // Update supervision
     const { data: updated, error: updateError } = await supabase
       .from('supervisions')
       .update({ supervisors: updatedSupervisors })
@@ -51,7 +48,7 @@ export async function POST(request: NextRequest) {
       message: `${supervisorIds.length} supervisor(s) assigned successfully`
     })
   } catch (error) {
-    console.error('[v0] Supervisor assignment error:', error)
+    console.error(' Supervisor assignment error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Assignment failed' },
       { status: 500 }
@@ -78,7 +75,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Get current supervision
     const { data: supervision, error: fetchError } = await supabase
       .from('supervisions')
       .select('supervisors')
@@ -89,12 +85,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Supervision not found' }, { status: 404 })
     }
 
-    // Remove supervisor
     const updatedSupervisors = (supervision?.supervisors || []).filter(
       (id: string) => id !== supervisorId
     )
 
-    // Update supervision
     const { data: updated, error: updateError } = await supabase
       .from('supervisions')
       .update({ supervisors: updatedSupervisors })
@@ -110,7 +104,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Supervisor removed from supervision'
     })
   } catch (error) {
-    console.error('[v0] Supervisor removal error:', error)
+    console.error(' Supervisor removal error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Removal failed' },
       { status: 500 }

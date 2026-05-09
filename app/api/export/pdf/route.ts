@@ -5,20 +5,17 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     
-    // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user role
     const { data: userData } = await supabase
       .from('users')
       .select('role, full_name')
       .eq('id', user.id)
       .single()
 
-    // Fetch supervisions based on role
     let query = supabase
       .from('supervisions')
       .select(`
@@ -38,7 +35,6 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
 
-    // Filter by teacher_id if not admin/director
     if (userData?.role !== 'admin' && userData?.role !== 'director') {
       query = query.eq('teacher_id', user.id)
     }
@@ -46,14 +42,12 @@ export async function GET(request: NextRequest) {
     const { data: supervisions, error } = await query
 
     if (error) {
-      console.error('[v0] Error fetching supervisions for PDF:', error)
+      console.error('  Error fetching supervisions for PDF:', error)
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
     }
 
-    // Fetch related data separately if supervisions exist
     let enrichedSupervisions: any[] = []
     if (supervisions && supervisions.length > 0) {
-      // Get unique IDs - handle both students array and legacy student_id
       const teacherIds = [...new Set(supervisions.map(s => s.teacher_id).filter(Boolean))]
       const studentIds = [
         ...new Set(
@@ -73,27 +67,23 @@ export async function GET(request: NextRequest) {
       ]
       const themeIds = [...new Set(supervisions.map(s => s.theme_id).filter(Boolean))]
 
-      // Fetch teachers
+      
       const { data: teachers } = teacherIds.length > 0 
         ? await supabase.from('users').select('id, full_name, email').in('id', teacherIds)
         : { data: [] }
 
-      // Fetch students
       const { data: students } = studentIds.length > 0
         ? await supabase.from('students').select('id, full_name, registration_number, program, level, email').in('id', studentIds)
         : { data: [] }
 
-      // Fetch themes
       const { data: themes } = themeIds.length > 0
         ? await supabase.from('themes').select('id, name').in('id', themeIds)
         : { data: [] }
 
-      // Create lookup maps
       const teacherMap = new Map((teachers || []).map(t => [t.id, t]))
       const studentMap = new Map((students || []).map(s => [s.id, s]))
       const themeMap = new Map((themes || []).map(t => [t.id, t]))
 
-      // Enrich supervisions - handle both students array and legacy student_id
       enrichedSupervisions = supervisions.map(sup => {
         let studentsArray: any[] = []
         if (sup.students && Array.isArray(sup.students)) {
@@ -106,7 +96,7 @@ export async function GET(request: NextRequest) {
           ...sup,
           teacher: teacherMap.get(sup.teacher_id) || null,
           studentList: studentsArray,
-          student: studentMap.get(sup.student_id) || null, // Keep for backward compatibility
+          student: studentMap.get(sup.student_id) || null, 
           theme: themeMap.get(sup.theme_id) || null,
         }
       })
@@ -435,7 +425,6 @@ export async function GET(request: NextRequest) {
 </html>
 `
 
-    // Return HTML that can be printed as PDF
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
@@ -443,7 +432,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[v0] PDF export error:', error)
+    console.error(' PDF export error:', error)
     return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 })
   }
 }

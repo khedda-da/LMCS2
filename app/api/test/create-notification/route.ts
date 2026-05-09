@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 })
     }
 
-    // Verify user exists
     const { data: userExists } = await supabase
       .from('users')
       .select('id')
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Create test notifications based on role
     const notifications = [
       {
         title: 'Welcome to LMCS',
@@ -80,7 +78,7 @@ export async function GET(request: NextRequest) {
       role,
     })
   } catch (error) {
-    console.error('[v0] Test notification error:', error)
+    console.error(' Test notification error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'An error occurred' },
       { status: 500 }

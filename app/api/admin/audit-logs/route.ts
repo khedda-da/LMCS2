@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      console.error('[v0] Error fetching audit logs:', error)
+      console.error('  Error fetching audit logs:', error)
       return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 })
     }
 
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error) {
-    console.error('[v0] Error in audit logs API:', error)
+    console.error(' Error in audit logs API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

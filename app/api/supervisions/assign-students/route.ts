@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current supervision
     const { data: supervision, error: fetchError } = await supabase
       .from('supervisions')
       .select('students')
@@ -33,11 +32,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Supervision not found' }, { status: 404 })
     }
 
-    // Merge existing and new students
     const existingStudents = supervision?.students || []
     const updatedStudents = Array.from(new Set([...existingStudents, ...studentIds]))
 
-    // Update supervision
     const { data: updated, error: updateError } = await supabase
       .from('supervisions')
       .update({ students: updatedStudents })
@@ -47,7 +44,6 @@ export async function POST(request: NextRequest) {
 
     if (updateError) throw updateError
 
-    // Log audit event
     await logAuditEvent({
       userId: user.id,
       action: 'ASSIGN',
@@ -59,7 +55,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Notify students and supervisors
     const newStudentIds = studentIds.filter((id: string) => !existingStudents.includes(id))
     if (newStudentIds.length > 0) {
       const supervisorId = updated.teacher_id
@@ -80,7 +75,7 @@ export async function POST(request: NextRequest) {
       message: `${studentIds.length} student(s) assigned successfully`
     })
   } catch (error) {
-    console.error('[v0] Student assignment error:', error)
+    console.error(' Student assignment error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Assignment failed' },
       { status: 500 }
@@ -107,7 +102,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Get current supervision
     const { data: supervision, error: fetchError } = await supabase
       .from('supervisions')
       .select('students')
@@ -123,7 +117,6 @@ export async function DELETE(request: NextRequest) {
       (id: string) => id !== studentId
     )
 
-    // Update supervision
     const { data: updated, error: updateError } = await supabase
       .from('supervisions')
       .update({ students: updatedStudents })
@@ -139,7 +132,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Student removed from supervision'
     })
   } catch (error) {
-    console.error('[v0] Student removal error:', error)
+    console.error(' Student removal error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Removal failed' },
       { status: 500 }

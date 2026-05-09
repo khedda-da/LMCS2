@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
 
     if (updateError) {
-      console.error('[v0] Update error:', updateError)
+      console.error(' Update error:', updateError)
       return NextResponse.json({ error: updateError.message }, { status: 400 })
     }
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'User approved successfully' })
   } catch (error) {
-    console.error('[v0] API error:', error)
+    console.error(' API error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'An error occurred' },
       { status: 500 }
